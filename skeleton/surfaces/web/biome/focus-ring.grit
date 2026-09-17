@@ -1,0 +1,11 @@
+// The focus ring is designed once, in shared/ui/base.css (:focus-visible box-shadow —
+// it follows the corner radius; an outline would cut it). A class string that suppresses
+// or restyles it per element takes away the keyboard user's only cue and nothing else
+// fails: the mouse path still works, so the regression ships silently.
+// Anchored regex on the literal's own source, same shape as design-system.grit.
+language js
+
+`$s` where {
+  $s <: r"^[\"'`][\s\S]*\b(?:focus-visible:(?:outline|shadow|ring)-|focus:shadow-none|focus:ring-0)[\s\S]*[\"'`]$",
+  register_diagnostic(span=$s, message="Focus is designed once — the :focus-visible ring in shared/ui/base.css. Don't suppress or restyle it per element; on a dark surface add the surface class (bg-immersive) and the ring adapts.", severity="error")
+}

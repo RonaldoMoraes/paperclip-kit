@@ -1,0 +1,32 @@
+# The local Postgres: one container, and on it every database this checkout and its
+# worktrees use — the shared `__DB_NAME__`, plus `__DB_NAME___<branch>` for each worktree
+# started with `yarn wt run --db`. `scripts/wt/wt.config.sh` names the container and the
+# user declared here, and the presence of this file is what turns the worktree CLI's
+# database steps on.
+#
+#   docker compose -f docker-compose.db.yml up -d
+#
+# Pinned to a major: a Postgres data directory is not readable by another major, so a bump
+# is a migration of the volume, done on purpose. (PG18+ moves the data path to
+# /var/lib/postgresql; the mount below is 16's.)
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: __DB_NAME__
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d __DB_NAME__"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

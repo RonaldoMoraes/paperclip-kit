@@ -1,0 +1,179 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    /* Intermediate weights are synthesized, not drawn faces. Never fake them. */
+    font-synthesis: none;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* The body is what fills the frame until React gets there: paint the canvas, not white. */
+  body {
+    @apply bg-canvas font-sans text-ink;
+  }
+
+  /* Numbers in data contexts never jitter. */
+  .tnum {
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * Focus is designed, not defaulted. A 2px outline drawn straight on a pill or a card cuts
+   * the corner radius, which looks like a rendering bug rather than a state. A ring built
+   * from box-shadow follows the radius, and the canvas-coloured halo underneath keeps it
+   * legible on both the light field and the brand surfaces.
+   */
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px rgb(var(--bg-canvas)),
+      0 0 0 4px rgb(var(--focus-ring));
+  }
+  /* on immersive surfaces the halo has to be the dark one, not the canvas */
+  .bg-immersive :focus-visible {
+    box-shadow:
+      0 0 0 2px rgb(var(--bg-immersive)),
+      0 0 0 4px rgb(var(--focus-ring));
+  }
+
+  /* The desktop scrollbar: the OS default is a grey gouge down the field. */
+  @supports selector(::-webkit-scrollbar) {
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgb(var(--fg-primary) / 0.18);
+      border: 3px solid transparent;
+      background-clip: content-box;
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgb(var(--fg-primary) / 0.3);
+      background-clip: content-box;
+    }
+  }
+  * {
+    scrollbar-color: rgb(var(--fg-primary) / 0.22) transparent;
+    scrollbar-width: thin;
+  }
+
+  ::selection {
+    background: rgb(var(--accent-100));
+  }
+}
+
+@layer utilities {
+  /*
+   * Emphasis inside a paragraph: the half that matters carries weight and primary ink, the
+   * rest recedes to secondary. Never italic, never a third colour.
+   */
+  .lede {
+    @apply font-medium text-ink;
+  }
+
+  /*
+   * The card. Surfaces separate by background colour plus a 1px hairline, no shadow on any
+   * node — the system is FLAT. The hairline shares the ink so it reads as drawn rather than
+   * as a rendering artefact.
+   */
+  .card {
+    background: rgb(var(--bg-surface));
+    border: 1px solid rgb(var(--fg-primary) / 0.1);
+  }
+
+  /*
+   * The floating chrome's material (tab bar, top bar): a translucent surface with a blur,
+   * so the page passes under it. It only works if content actually does — a screen that
+   * fades out before it reaches the bar defeats the material.
+   */
+  .chrome {
+    background: rgb(var(--bg-surface) / 0.82);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgb(var(--fg-primary) / 0.08);
+  }
+}
+
+/*
+ * Accessibility. Reduced transparency means frostier and more solid, never "the same but
+ * dimmer"; reduced motion is handled per component through Motion's `reducedMotion="user"`,
+ * and the CSS transitions answer it here.
+ */
+@media (prefers-reduced-transparency: reduce) {
+  .chrome {
+    background: rgb(var(--bg-surface) / 0.98);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .chrome {
+    background: rgb(var(--bg-surface));
+    border-color: rgb(var(--fg-primary) / 0.45);
+  }
+  .card {
+    border-color: rgb(var(--fg-primary) / 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/*
+ * Print. The app has to survive leaving the screen: no floating chrome, no reversed-out ink,
+ * no gradients eating a toner cartridge. `.print-keep` is the escape hatch for a document's
+ * own masthead.
+ */
+@media print {
+  nav:not(.print-keep),
+  header:not(.print-keep),
+  .no-print {
+    display: none !important;
+  }
+  body,
+  .bg-canvas,
+  .bg-immersive {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .card,
+  .chrome {
+    border: 1px solid #999 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  .text-ondark,
+  .text-ondark-muted,
+  .text-ondark-accent {
+    color: #000 !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+  }
+}

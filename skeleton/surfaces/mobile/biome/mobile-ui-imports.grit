@@ -1,0 +1,41 @@
+// Mobile's `@ui/*` alias falls back from `<name>.native` to `<name>`, so a web-only
+// shared/ui module imported from apps/mobile resolves the web file, typechecks, bundles
+// and crashes on the device. Two kinds are banned. The components listed here have no
+// `.native` split and render DOM (`ScreenPending` — an `<output>` with motion dots, the
+// router's pending shell), so the fix is to write the split. A component that already has
+// its twin is not listed and never should be: `Button.native.tsx` and `Wordmark.native.tsx`
+// are what the alias resolves first, so importing either from mobile is correct. `@ui/motion` is
+// different: what it exports are web transition shapes — spring and variant objects
+// Reanimated cannot read — so it is a token file mobile has no use for, not a file to
+// split. The numbers under those shapes live in `@ui/motion-tokens`, which is
+// platform-neutral and not caught here: the pattern below matches the specifier exactly.
+// A shared component that gains a DOM-only face joins the first list in the same change.
+//
+// The match is on the specifier literal, which is the one node every form shares:
+// GritQL's `import $what from $src` binds a default or a named clause and silently
+// misses `import * as`, `import d, { … }`, `export { … } from` and `export * as`. The
+// cost is that any string equal to a banned specifier fires — a mobile `vi.mock` target,
+// say — and that is accepted, because the mock reaches the same web file.
+//
+// Exempt are the statements `erased_at_build()` catches: `import type`, `export type …
+// from`, and `typeof import(…)`. An inline `{ type X }` specifier still fires, and
+// Biome's `useImportType` rewrites it into the exempt form. Scoped by biome.json to
+// apps/mobile.
+language js
+
+// an ancestor statement that TypeScript erases whole: `import type` / `export type`, and
+// the `typeof import(…)` type query
+pattern erased_at_build() { r"^(?:(?:import|export)\s+type\b|typeof\s+import\b)[\s\S]*$" }
+
+or {
+  $s where {
+    $s <: r"^[\"'`]@ui/components/ScreenPending[\"'`]$",
+    $s <: not within erased_at_build() ,
+    register_diagnostic(span=$s, message="This shared/ui component is web-only — it renders DOM and has no .native split. Add one (`<name>.native.tsx` beside it, same exports) and import it from there; the alias resolves the split before the web file.", severity="error")
+  },
+  $s where {
+    $s <: r"^[\"'`]@ui/motion[\"'`]$",
+    $s <: not within erased_at_build() ,
+    register_diagnostic(span=$s, message="@ui/motion holds web motion tokens — motion/react transition and variant objects that Reanimated cannot read. There is no .native split to add: the numbers live in @ui/motion-tokens; the builders in ~/lib/motion.", severity="error")
+  }
+}

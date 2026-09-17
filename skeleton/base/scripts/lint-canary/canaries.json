@@ -1,0 +1,35 @@
+[
+  {
+    "plugin": "biome/promise-chains.grit",
+    "fixture": "promise-chains.fixture.ts",
+    "dest": "apps/server/src/__lint-canary__.promise-chains.ts",
+    "expect": [{ "needle": "promise chains are not read here", "min": 1 }]
+  },
+  {
+    "plugin": "biome/spec-guardrails.grit",
+    "fixture": "spec-guardrails.fixture.ts",
+    "dest": "shared/domain/__lint-canary__.spec-guardrails.spec.ts",
+    "expect": [{ "needle": "never fireEvent", "min": 1 }]
+  },
+  {
+    "plugin": "biome/no-flaky-mocks.grit",
+    "fixture": "no-flaky-mocks.fixture.ts",
+    "dest": "shared/domain/__lint-canary__.no-flaky-mocks.spec.ts",
+    "expect": [
+      { "needle": "vi.hoisted() is banned", "min": 1 },
+      { "needle": "importOriginal", "min": 1 }
+    ]
+  },
+  {
+    "plugin": "biome/no-unknown-cast.grit",
+    "fixture": "no-unknown-cast.fixture.ts",
+    "dest": "apps/server/src/__lint-canary__.no-unknown-cast.ts",
+    "expect": [{ "needle": "Double cast", "min": 1 }]
+  },
+  {
+    "plugin": "biome/error-shape.grit",
+    "fixture": "error-shape.fixture.ts",
+    "dest": "shared/domain/__lint-canary__.error-shape.ts",
+    "expect": [{ "needle": "throws a named error", "min": 1 }]
+  }
+]

@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# wt — the worktree CLI.
+#
+# Command list and per-command detail live in lib/help.sh, so that `wt help`
+# and this file cannot drift apart:
+#
+#   yarn wt help              the overview
+#   yarn wt help <command>    detail for one command
+#   yarn wt <command> --help  the same detail, answered before the command runs
+#
+# Every command acts on the checkout the current directory belongs to, not on
+# the checkout this script lives in — a worktree cut before this CLI landed
+# still runs against it.
+#
+# Everything product-specific — trunk, processes, ports, database — is in
+# wt.config.sh beside this file. The libs never name the product.
+#
+# See docs/worktrees.md.
+# =============================================================================
+
+WT_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+WT_LIB_DIR="$WT_SCRIPT_DIR/lib"
+
+# shellcheck source=lib/colors.sh
+source "$WT_LIB_DIR/colors.sh"
+# shellcheck source=lib/context.sh
+source "$WT_LIB_DIR/context.sh"
+# shellcheck source=lib/config.sh
+source "$WT_LIB_DIR/config.sh"
+# shellcheck source=lib/run-quiet.sh
+source "$WT_LIB_DIR/run-quiet.sh"
+# shellcheck source=lib/help.sh
+source "$WT_LIB_DIR/help.sh"
+# shellcheck source=lib/slots.sh
+source "$WT_LIB_DIR/slots.sh"
+# shellcheck source=lib/env-check.sh
+source "$WT_LIB_DIR/env-check.sh"
+# shellcheck source=lib/env-overlay.sh
+source "$WT_LIB_DIR/env-overlay.sh"
+# shellcheck source=lib/preflight.sh
+source "$WT_LIB_DIR/preflight.sh"
+# shellcheck source=lib/healthcheck.sh
+source "$WT_LIB_DIR/healthcheck.sh"
+# shellcheck source=lib/deps-preflight.sh
+source "$WT_LIB_DIR/deps-preflight.sh"
+# shellcheck source=lib/db.sh
+source "$WT_LIB_DIR/db.sh"
+# shellcheck source=lib/procfile.sh
+source "$WT_LIB_DIR/procfile.sh"
+# shellcheck source=lib/cmd-create.sh
+source "$WT_LIB_DIR/cmd-create.sh"
+# shellcheck source=lib/cmd-provision.sh
+source "$WT_LIB_DIR/cmd-provision.sh"
+# shellcheck source=lib/cmd-run.sh
+source "$WT_LIB_DIR/cmd-run.sh"
+# shellcheck source=lib/cmd-stop.sh
+source "$WT_LIB_DIR/cmd-stop.sh"
+# shellcheck source=lib/cmd-publish.sh
+source "$WT_LIB_DIR/cmd-publish.sh"
+# shellcheck source=lib/cmd-dispose.sh
+source "$WT_LIB_DIR/cmd-dispose.sh"
+
+# _wt_wants_help <args...> — true when the FIRST argument asks for help.
+# Only the first position, so a value that happens to be "--help" later in a
+# command line is passed through rather than swallowed.
+_wt_wants_help() {
+  [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]
+}
+
+main() {
+  local command="${1:-}"
+  [[ $# -gt 0 ]] && shift
+
+  # The config names the processes the help text lists, so it loads first.
+  wt_config_load
+
+  # Answered before dispatch so that asking for help never pushes, installs or
+  # creates anything.
+  if [[ -n "$command" ]] && _wt_wants_help "$@"; then
+    if wt_help_for "$command"; then
+      exit 0
+    fi
+  fi
+
+  case "$command" in
+    help)
+      local topic="${1:-}"
+      if [[ -z "$topic" ]]; then
+        wt_help_overview
+        exit 0
+      fi
+      if ! wt_help_for "$topic"; then
+        printf "ERROR: no help for '%s'\n\n" "$topic" >&2
+        printf 'Known commands: %s\n' "${WT_HELP_COMMANDS[*]}" >&2
+        exit 1
+      fi
+      ;;
+    create) wt_cmd_create "$@" ;;
+    provision) wt_cmd_provision "$@" ;;
+    run) wt_cmd_run "$@" ;;
+    health) wt_cmd_health "$@" ;;
+    stop) wt_cmd_stop "$@" ;;
+    status) wt_cmd_status "$@" ;;
+    logs) wt_cmd_logs "$@" ;;
+    publish) wt_cmd_publish "$@" ;;
+    dispose) wt_cmd_dispose "$@" ;;
+    "" | -h | --help) wt_help_overview ;;
+    *)
+      printf "ERROR: unknown command '%s'\n\n" "$command" >&2
+      wt_help_overview >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

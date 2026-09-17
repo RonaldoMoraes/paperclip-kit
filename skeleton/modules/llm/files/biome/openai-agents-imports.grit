@@ -1,0 +1,23 @@
+// The OpenAI Agents SDK — @openai/agents and its scoped siblings (-core, -openai,
+// -realtime, …) — has exactly one sanctioned home, the AGENT_RUNTIME=openai-agents
+// adapter at apps/server/src/llm/providers/openai-agents.service.ts. The general
+// vendor quarantine (llm-provider-imports.grit) keeps @openai/* out of everything but
+// providers/; this rule narrows the agents family to the one file, so a second
+// provider file cannot quietly become an SDK consumer. Everything else injects
+// AGENT_RUNNER and talks to the AgentRunner port; specs get the SDK types they
+// script against re-exported from the sanctioned file.
+//
+// JsModuleSource is the source-string node of every static import and re-export;
+// snippet forms (`import $x from $src`) silently match only single-specifier
+// clauses in Biome's GritQL, so a multi-name import walks through them.
+language js
+
+or {
+  JsModuleSource() as $src,
+  `require($src)`,
+  `import($src)`
+} where {
+  $src <: r"^[\"'`]@openai/agents(?:-[a-z]+)*(?:[\"'`]$|/.*)",
+  not $filename <: r".*apps/server/src/llm/providers/openai-agents\.service\.ts$",
+  register_diagnostic(span=$src, message="The OpenAI Agents SDK (@openai/agents and its -core/-openai/-realtime siblings) may only be imported by apps/server/src/llm/providers/openai-agents.service.ts, the AGENT_RUNTIME=openai-agents adapter. Everything else injects AGENT_RUNNER and talks to the AgentRunner port.", severity="error")
+}

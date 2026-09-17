@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# pc — the Paperclip coordination ledger.
+#
+# A thin shim so the ledger is one word on the command line from anywhere in the tree.
+# The implementation is pc.mjs (Node, ESM, zero dependencies).
+#
+#   .paperclip/bin/pc status          # works from any subdirectory
+#   export PATH="$PWD/.paperclip/bin:$PATH" && pc status
+#
+# The ledger directory is found by walking up from $PWD; $PAPERCLIP_DIR overrides it.
+set -euo pipefail
+
+# Resolve this script's real directory, following symlinks (install.sh may link it).
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  [[ $src != /* ]] && src="$dir/$src"
+done
+BIN_DIR="$(cd -P "$(dirname "$src")" && pwd)"
+
+NODE_BIN="${PAPERCLIP_NODE:-node}"
+if ! command -v "$NODE_BIN" >/dev/null 2>&1; then
+  echo "pc: node not found on PATH (set PAPERCLIP_NODE to a node binary)" >&2
+  exit 1
+fi
+
+exec "$NODE_BIN" "$BIN_DIR/pc.mjs" "$@"

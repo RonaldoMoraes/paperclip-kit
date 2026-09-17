@@ -1,0 +1,24 @@
+// LLM vendor SDKs are quarantined behind the provider adapters in
+// apps/server/src/llm/providers/. Everything else — feature services, controllers,
+// even the rest of the llm domain — talks to the LlmClient interface
+// (apps/server/src/llm/llm.types.ts). An SDK import anywhere else would typecheck
+// and work, and quietly couple a feature to one vendor's API surface.
+//
+// The quarantine covers each vendor's whole scope (@openai/*, @anthropic-ai/*,
+// @ai-sdk/*) — a scoped sibling like @openai/agents is the same vendor surface
+// as openai itself.
+//
+// JsModuleSource is the source-string node of every static import and re-export;
+// snippet forms (`import $x from $src`) silently match only single-specifier
+// clauses in Biome's GritQL, so a multi-name import walks through them.
+language js
+
+or {
+  JsModuleSource() as $src,
+  `require($src)`,
+  `import($src)`
+} where {
+  $src <: r"^[\"'`](?:openai|@openai/[^\"'`/]+|@anthropic-ai/[^\"'`/]+|@google/genai|@google/generative-ai|ai|@ai-sdk/[^\"'`/]+)(?:[\"'`]$|/.*)",
+  not $filename <: r".*apps/server/src/llm/providers/[^/]+\.tsx?$",
+  register_diagnostic(span=$src, message="Vendor LLM SDKs (openai, @openai/*, @anthropic-ai/*, @google/genai, ai, @ai-sdk/*) may only be imported inside apps/server/src/llm/providers/. Everything else injects LLM_CLIENT and talks to the LlmClient interface.", severity="error")
+}

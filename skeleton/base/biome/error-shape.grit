@@ -1,0 +1,18 @@
+// Domain code throws errors a caller can act on. `new Error("…")` carries a string and
+// nothing else: the screen that catches it can show the message and cannot tell a refusal
+// worth waiting out from one worth retrying, and nothing short of a substring match tells
+// one throw site from another. A flow whose shape both apps share declares its error in
+// `shared/contracts/<feature>/errors.ts`, where the contract it belongs to already lives;
+// a lib declares its own beside the code that throws it. Either way the class carries a
+// name, and whatever the caller has to branch on rides on it.
+//
+// Warn rather than error, because the fix is sometimes a new class, which is a decision
+// rather than a rewrite. Scoped by biome.json to both apps' `features/`, to mobile's
+// routes and to `shared/{contracts,domain}`, source only: an app's entry point and the
+// testing helpers throw at a boundary that has no domain to name, and a spec's `new Error`
+// is a stub for something that failed rather than a throw of this product's own.
+language js
+
+`new Error($...)` as $bare where {
+  register_diagnostic(span=$bare, message="Domain code throws a named error, never a bare `Error`: a shared flow declares its class in `shared/contracts/<feature>/errors.ts`, a lib beside the code that throws it. A caller can branch on a named error; a bare one it can only display.", severity="warn")
+}

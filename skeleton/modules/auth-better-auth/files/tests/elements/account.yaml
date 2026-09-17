@@ -1,0 +1,112 @@
+# Sign-in — web: `apps/web/src/features/account/screens/Account.tsx` (/account); mobile:
+# `apps/mobile/src/features/account/screens/SignIn.tsx` (sign-in). The two screens carry
+# the same controls under the same testids; a provider button's id is `account-<provider>`.
+
+account_title:
+  web:
+    locator: testid
+    value: account-title
+  mobile:
+    locator: testid
+    value: account-title
+
+account_error:
+  web:
+    locator: testid
+    value: account-error
+  mobile:
+    locator: testid
+    value: account-error
+
+account_apple:
+  web:
+    locator: testid
+    value: account-apple
+  mobile:
+    locator: testid
+    value: account-apple
+
+account_google:
+  web:
+    locator: testid
+    value: account-google
+  mobile:
+    locator: testid
+    value: account-google
+
+account_email_input:
+  web:
+    locator: testid
+    value: account-email-input
+  mobile:
+    locator: testid
+    value: account-email-input
+
+account_email_submit:
+  web:
+    locator: testid
+    value: account-email-submit
+  mobile:
+    locator: testid
+    value: account-email-submit
+
+account_sent_to:
+  web:
+    locator: testid
+    value: account-sent-to
+  mobile:
+    locator: testid
+    value: account-sent-to
+
+account_otp_input:
+  web:
+    locator: testid
+    value: account-otp-input
+  mobile:
+    locator: testid
+    value: account-otp-input
+
+account_otp_submit:
+  web:
+    locator: testid
+    value: account-otp-submit
+  mobile:
+    locator: testid
+    value: account-otp-submit
+
+# The code step's two ways out, on both fronts. Both make the person wait between one code
+# and the next, so the resend spends the wait disabled with the seconds left in its label.
+account_otp_resend:
+  web:
+    locator: testid
+    value: account-resend
+  mobile:
+    locator: testid
+    value: account-resend
+
+account_change_email:
+  web:
+    locator: testid
+    value: account-change-email
+  mobile:
+    locator: testid
+    value: account-change-email
+
+# The two Settings rows this module contributes (`features/account/settingsActions.ts`).
+# Named here rather than counted: a tree with more modules carries more rows, and this
+# module's claim is that its own two stand — never how many there are in total.
+account_settings_sign_out:
+  web:
+    locator: testid
+    value: settings-action-sign-out
+  mobile:
+    locator: testid
+    value: settings-action-sign-out
+
+account_settings_delete:
+  web:
+    locator: testid
+    value: settings-action-delete-account
+  mobile:
+    locator: testid
+    value: settings-action-delete-account

@@ -1,0 +1,37 @@
+// A route file mounts, reads its hooks, branches once and hands props. State, an effect or
+// a reducer in it is logic with nowhere to be tested: the router owns the file, so it can
+// only be exercised through the router, and the screen under it can no longer be rendered
+// with that state set. `useState` moves into the feature hook that owns the transport, or
+// into a plain function that decides; `useEffect` is the hook's, keyed on the values it
+// reports.
+//
+// A runtime import from `@domain/` is the same finding from the other side: copy, rules and
+// keys reach a screen as props from the hook that read them, and a route that imports them
+// has started deciding. `import type` is exempt — TypeScript erases it, so a route may name
+// a domain type in its props. An inline `{ type X }` specifier still fires, and Biome's
+// `useImportType` rewrites it into the exempt form.
+//
+// Scoped by biome.json to `apps/web/src/app/routes/**` except `__root.tsx` and `_app.tsx`:
+// the root and the shelled layout are where the process-wide installs live (the devtools,
+// the gates), which are effects by nature and belong to no screen. The mobile surface scopes
+// the same rule to `apps/mobile/app/**` except `_layout.tsx`.
+language js
+
+// an ancestor statement that TypeScript erases whole: `import type` / `export type`, and
+// the `typeof import(…)` type query
+pattern erased_at_build() { r"^(?:(?:import|export)\s+type\b|typeof\s+import\b)[\s\S]*$" }
+
+or {
+  or {
+    `useState($...)` as $hook,
+    `useEffect($...)` as $hook,
+    `useReducer($...)` as $hook
+  } where {
+    register_diagnostic(span=$hook, message="A route mounts, reads hooks and hands props — it holds no state, effect or reducer of its own. Move the state into the feature hook that owns the read, or into a plain function that decides; a view event fires from that hook's effect.", severity="error")
+  },
+  $s where {
+    $s <: r"^[\"'`]@domain/.*[\"'`]$",
+    $s <: not within erased_at_build() ,
+    register_diagnostic(span=$s, message="A route takes no runtime import from @domain/ — copy, rules and keys reach the screen as props from the hook that read them. `import type` is fine.", severity="error")
+  }
+}

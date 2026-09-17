@@ -1,0 +1,69 @@
+# Manually dispatch the mobile app's EAS delivery workflows.
+#
+# Dispatch-only by design — EAS builds cost credits, so nothing here runs on push/PR.
+# The EAS workflow file (apps/mobile/.eas/workflows/<environment>.yml) owns the build-vs-OTA
+# decision via the native fingerprint; this job only uploads the checkout. Requires the
+# `EXPO_TOKEN` repo secret (an Expo robot access token). The job returns as soon as the EAS
+# run is dispatched — progress lives on expo.dev.
+
+name: Mobile Delivery
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Which app to deliver (fingerprint decides build vs OTA update)
+        required: true
+        type: choice
+        default: development
+        options:
+          - development
+          - preview
+          - production
+      force_build:
+        description: Build a new binary even if the native fingerprint is unchanged
+        required: false
+        type: boolean
+        default: false
+      confirm_production:
+        description: Type "production" to confirm when delivering the production app (ignored otherwise)
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-delivery-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'production' && 'Production' || inputs.environment == 'preview' && 'Staging' || 'Development' }}
+    steps:
+      - name: Guard production dispatch
+        if: ${{ inputs.environment == 'production' && inputs.confirm_production != 'production' }}
+        run: |
+          echo '::error::Production delivery requires typing "production" in the confirmation field.'
+          exit 1
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Install deps
+        run: yarn install --immutable
+
+      - name: Run EAS delivery workflow
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli@latest workflow:run .eas/workflows/${{ inputs.environment }}.yml --non-interactive -F force_build=${{ inputs.force_build }}

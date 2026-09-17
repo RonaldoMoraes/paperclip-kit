@@ -1,0 +1,62 @@
+# Paywall — web only: `apps/web/src/features/subscription/screens/Paywall.tsx` (/paywall).
+# The module ships no mobile screen: selling happens on the web by decision, so every key
+# here declares its mobile counterpart as `none` rather than pointing at a testid the phone
+# does not have.
+
+paywall_title:
+  web:
+    locator: testid
+    value: paywall-title
+  mobile: none
+
+paywall_body:
+  web:
+    locator: testid
+    value: paywall-body
+  mobile: none
+
+# Only shown when the SERVER said a trial may still be offered — the same rule the checkout
+# applies to the charge.
+paywall_trial:
+  web:
+    locator: testid
+    value: paywall-trial
+  mobile: none
+
+paywall_plan_monthly:
+  web:
+    locator: testid
+    value: paywall-plan-monthly
+  mobile: none
+
+paywall_plan_annual:
+  web:
+    locator: testid
+    value: paywall-plan-annual
+  mobile: none
+
+paywall_submit:
+  web:
+    locator: testid
+    value: paywall-submit
+  mobile: none
+
+paywall_error:
+  web:
+    locator: testid
+    value: paywall-error
+  mobile: none
+
+# The other half of the wall: a plan on record that stopped paying belongs at the billing
+# portal, not at a second checkout.
+paywall_lapsed:
+  web:
+    locator: testid
+    value: paywall-lapsed
+  mobile: none
+
+paywall_manage_billing:
+  web:
+    locator: testid
+    value: paywall-manage-billing
+  mobile: none

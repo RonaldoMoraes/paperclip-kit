@@ -1,0 +1,61 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "payments-stripe",
+  "title": "Payments (Stripe)",
+  "summary": "subscriptions sold on the web through Stripe Checkout: the entitlement is computed once on the server and rides on the session, a guard and a route layout read it, the checkout return is settled from Stripe's own Checkout Session, every webhook is recorded and deduplicated, `provider` says who sold a row so only that seller may manage it, and with no `STRIPE_SECRET_KEY` billing is inert rather than broken",
+  "requires": [
+    "auth-better-auth"
+  ],
+  "surfaces": [
+    "web"
+  ],
+  "server": {
+    "modules": [
+      {
+        "import": "./subscription/subscription.module",
+        "symbol": "SubscriptionModule"
+      }
+    ],
+    "ports": {
+      "auth-extensions": {
+        "import": "./subscription/auth-extensions.provider",
+        "symbol": "SubscriptionAuthExtensionsProvider"
+      }
+    },
+    "rawBodyPaths": [
+      "/api/auth/stripe/webhook"
+    ]
+  },
+  "contracts": {
+    "handlers": [
+      {
+        "import": "./subscription",
+        "symbol": "handlers"
+      }
+    ]
+  },
+  "web": {
+    "settingsActions": [
+      {
+        "import": "~/features/subscription/settingsActions",
+        "symbol": "settingsActions"
+      }
+    ]
+  },
+  "packages": {
+    "root": {
+      "dependencies": {
+        "@better-auth/stripe": "@versions",
+        "stripe": "@versions"
+      }
+    }
+  },
+  "docs": "docs/payments-stripe.md",
+  "postScaffold": [
+    "yarn db:generate && yarn db:migrate --name subscription  (the two tables: `subscription`, which @better-auth/stripe owns, and `webhook_event`, the deduplicated trail)",
+    "billing is OFF until STRIPE_SECRET_KEY is set: no client, no plugin, no checkout \u2014 `yarn dev`, `yarn dev:mock` and every gate run that way on purpose",
+    "to turn it on, set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTHLY and STRIPE_PRICE_ANNUAL in .env (the boot fails naming whichever is missing); STRIPE_PORTAL_CONFIGURATION is optional",
+    "webhooks in development: `stripe listen --forward-to localhost:3000/api/auth/stripe/webhook` \u2014 its `whsec_\u2026` is STRIPE_WEBHOOK_SECRET, and that path is in KIT_RAW_BODY_PATHS so the bytes Stripe signed reach the handler unparsed",
+    "mock mode boots with no subscription: the paywall is what a guarded route sends you to, and the mocked checkout settles into an active plan"
+  ]
+}

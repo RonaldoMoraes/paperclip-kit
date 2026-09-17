@@ -1,0 +1,20 @@
+// A Reanimated spring tuned by hand must name its mass. `springify()` and `withSpring`
+// write only the keys they were given and merge them over Reanimated's default config,
+// whose mass is 4 — so a chain that sets stiffness and damping from a shared token but
+// not mass runs four times heavier than its web twin and settles far slower. Every spring
+// token in shared/ui/motion-tokens.ts carries `mass`; a chain reads all three or none.
+// Scoped by biome.json to apps/mobile.
+language js
+
+or {
+  `$_.springify()` as $s where {
+    or { $s <: within `$_.stiffness($_)` , $s <: within `$_.damping($_)` },
+    not $s <: within `$_.mass($_)`
+  },
+  `withSpring($_, $cfg)` as $s where {
+    $cfg <: r"^\{[\s\S]*\b(?:stiffness|damping)\s*:[\s\S]*\}$",
+    not $cfg <: r"[\s\S]*\bmass\s*:[\s\S]*"
+  }
+} where {
+  register_diagnostic(span=$s, message="A tuned spring names its mass: add `.mass(TOKEN.mass)` to the chain (or `mass:` to the withSpring config) — Reanimated fills a missing mass with its default of 4 and the spring settles far slower than the web's.", severity="error")
+}

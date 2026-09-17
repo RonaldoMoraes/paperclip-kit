@@ -1,0 +1,11 @@
+{
+  // The Appium lane compiles apart from the Playwright one: its files read the wdio
+  // globals (`browser`, `expect`, mocha's `describe`/`it`), which the web suite must not
+  // see. `tests/tsconfig.json` leaves these directories out for the same reason.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "@wdio/globals/types", "@wdio/mocha-framework"]
+  },
+  "include": ["appium/**/*.ts", "pages/mobile/**/*.ts", "specs/mobile/**/*.ts"],
+  "exclude": []
+}

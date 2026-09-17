@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["vite/client"],
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*"],
+      "@ui/*": ["../../shared/ui/*"],
+      "@contracts/*": ["../../shared/contracts/*"],
+      "@domain/*": ["../../shared/domain/*"]
+    }
+  },
+  "include": [
+    "src",
+    "vite.config.ts",
+    "vitest.setup.ts",
+    "../../shared/ui",
+    "../../shared/contracts",
+    "../../shared/domain"
+  ],
+  // Platform splits in shared/ui are React Native; the mobile app's tsconfig owns them.
+  "exclude": [
+    "../../shared/ui/**/*.native.tsx",
+    "../../shared/ui/**/*.native.ts",
+    "../../shared/ui/**/*.native.spec.tsx"
+  ]
+}

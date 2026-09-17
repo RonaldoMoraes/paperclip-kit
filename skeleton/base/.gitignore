@@ -1,0 +1,55 @@
+# Installs
+**/node_modules
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.yarn/install-state.gz
+.pnp.*
+
+# Build output
+**/dist
+**/*.tsbuildinfo
+**/generated/
+**/.tanstack
+# The route tree is written by the TanStack router plugin on every dev/build and by
+# `yarn routes:generate` for typecheck and vitest — generated, never committed.
+apps/web/src/app/routeTree.gen.ts
+
+# Environment files (the example is the documentation; the real one holds credentials)
+.env
+.env.*
+!.env.example
+
+# Worktrees (scripts/wt state) and Claude Code's own worktree checkouts
+.wt/
+.claude/worktrees
+.claude/settings.local.json
+/CLAUDE.local.md
+
+# Paperclip kit: the manifest and the scaffold ledger are the product's; the rest is local
+/.paperclip/*
+!/.paperclip/project.manifest.json
+!/.paperclip/scaffold.lock.json
+
+# Test artifacts
+**/coverage
+tests/.artifacts
+tests/allure-results
+tests/allure-report
+tests/playwright-report
+tests/test-results
+tests/blob-report
+tests/agents/plans/**/*.plan.md
+.playwright-mcp/
+
+# Mobile
+**/.expo
+apps/mobile/ios
+apps/mobile/android
+
+# OS / editors
+**/.DS_Store
+**/.idea

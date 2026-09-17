@@ -1,0 +1,52 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "analytics",
+  "title": "Analytics",
+  "summary": "the analytics port for real: one PHI-safe event contract every layer shares, a batching queue on web and mobile, one server door (`POST /api/analytics/events`), a MongoDB store behind ANALYTICS_MODE=fake|real with a console store by default, a coverage report and the advisory screen reminder",
+  "requires": [],
+  "surfaces": ["web", "mobile"],
+  "server": {
+    "modules": [{ "import": "./analytics/analytics.module", "symbol": "AnalyticsModule" }],
+    "ports": {
+      "analytics": { "import": "./analytics/analytics.provider", "symbol": "AnalyticsProvider" }
+    }
+  },
+  "contracts": { "handlers": [{ "import": "./analytics", "symbol": "handlers" }] },
+  "web": {
+    "boot": [{ "import": "~/lib/analytics", "symbol": "bootAnalytics" }]
+  },
+  "mobile": {
+    "providers": [{ "import": "~/features/analytics/components/ScreenViews", "symbol": "AnalyticsScreenViews" }],
+    "boot": [{ "import": "~/lib/analytics", "symbol": "bootAnalytics" }]
+  },
+  "packages": {
+    "root": {
+      "dependencies": { "mongodb": "@versions" },
+      "scripts": { "analytics:coverage": "node scripts/analytics-coverage.mjs" }
+    }
+  },
+  "biome": {
+    "plugins": ["./biome/analytics-provider-imports.grit"]
+  },
+  "canaries": [
+    {
+      "plugin": "biome/analytics-provider-imports.grit",
+      "fixture": "analytics-provider-imports.fixture.ts",
+      "dest": "apps/server/src/__lint-canary__.analytics-provider-imports.ts",
+      "expect": [{ "needle": "The MongoDB driver", "min": 1 }]
+    }
+  ],
+  "hooks": [
+    {
+      "if": "Edit(apps/**)",
+      "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/analytics-reminder.sh",
+      "timeout": 15,
+      "statusMessage": "Checking the new screen for analytics..."
+    }
+  ],
+  "docs": "docs/analytics.md",
+  "postScaffold": [
+    "ANALYTICS_MODE=fake by default: every batch is a console line and nothing is stored. To write to MongoDB set ANALYTICS_MODE=real and ANALYTICS_MONGODB_URL in .env (ANALYTICS_MONGODB_DB defaults to __PRODUCT_SLUG__-analytics).",
+    "run `yarn analytics:coverage` after adding screens — a report of which screens track events, never a gate"
+  ]
+}

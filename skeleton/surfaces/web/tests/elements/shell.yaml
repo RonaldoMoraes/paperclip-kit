@@ -1,0 +1,53 @@
+# The app shell. On web it is the `_app` layout's chrome:
+# `apps/web/src/features/shell/components/TabBar.tsx` (the floating bar and its travelling
+# pill) and `TopBar.tsx` (the wordmark and the scroll-fading material). Mobile has its own
+# tab bar and no top bar, so those fronts are `none`.
+tab_bar:
+  web:
+    locator: testid
+    value: tab-bar
+  mobile: none
+
+top_bar:
+  web:
+    locator: testid
+    value: top-bar
+  mobile: none
+
+top_bar_material:
+  web:
+    locator: testid
+    value: top-bar-material
+  mobile: none
+
+tab_example:
+  web:
+    locator: testid
+    value: tab-example
+  mobile:
+    locator: testid
+    value: tab-example
+
+tab_settings:
+  web:
+    locator: testid
+    value: tab-settings
+  mobile:
+    locator: testid
+    value: tab-settings
+
+tab_pill_example:
+  web:
+    locator: testid
+    value: tab-pill-example
+  mobile:
+    locator: testid
+    value: tab-pill-example
+
+tab_pill_settings:
+  web:
+    locator: testid
+    value: tab-pill-settings
+  mobile:
+    locator: testid
+    value: tab-pill-settings

@@ -1,0 +1,18 @@
+# Local secrets / env
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Playwright
+.artifacts/
+playwright-report/
+test-results/
+
+# Local plans / scratch (never commit)
+*.plan.md
+
+# Logs
+*.log

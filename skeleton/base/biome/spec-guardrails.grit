@@ -1,0 +1,80 @@
+// Vitest specs (apps/** and shared/** — the Playwright suite under tests/ has its own
+// locator rules and is excluded in biome.json) drive the UI the way a person does and
+// assert claims that fail when the logic behind them breaks. Errors here: fireEvent (a
+// dispatched event is not an interaction — interact through @testing-library/user-event;
+// both apps' specs run under jsdom); snapshot assertions (fail on any render change,
+// pass on broken logic); raw sleeps (flake by construction — waitFor/findBy or fake
+// timers); querySelector traversal (bypasses the query layer); role/text queries — a
+// testID is this product's stable handle, so query by testID wherever the element can
+// carry one, and role/text remain for what genuinely has no testID. Warned: manual act()
+// (userEvent and waitFor already wrap it; reaching for it papers over a missed await —
+// what is left for it is an update no interaction drives, such as settling a deferred
+// promise or advancing fake timers before asserting nothing moved). vi.hoisted and
+// importOriginal are banned by biome/no-flaky-mocks.grit, wired in the same override.
+//
+// The long member-call list is required: the bare-name pattern `$name($...)` matches
+// `getByRole(...)` but not `screen.getByRole(...)`, and both forms appear in specs.
+language js
+
+or {
+  `fireEvent` as $fire where {
+    register_diagnostic(span=$fire, message="Interact through userEvent, never fireEvent — a dispatched event is not an interaction.", severity="error")
+  },
+  or {
+    `$_.toMatchSnapshot($...)` as $snap,
+    `$_.toMatchInlineSnapshot($...)` as $snap
+  } where {
+    register_diagnostic(span=$snap, message="No snapshot assertions — a snapshot fails on any render change and passes on broken logic. Assert the specific claim this spec makes.", severity="error")
+  },
+  `new Promise($cb)` as $sleep where {
+    $cb <: contains `setTimeout`,
+    register_diagnostic(span=$sleep, message="No raw sleeps — a timed wait flakes by construction. Use waitFor/findBy, or fake timers.", severity="error")
+  },
+  `act($...)` as $act where {
+    register_diagnostic(span=$act, message="Manual act() is a last resort — userEvent and waitFor already wrap it. Legitimate only to flush an update no interaction or waitFor-able change drives (e.g. settling a deferred promise before asserting nothing changed).", severity="warn")
+  },
+  or {
+    `$_.querySelector($...)` as $dom,
+    `$_.querySelectorAll($...)` as $dom
+  } where {
+    register_diagnostic(span=$dom, message="No querySelector in specs — it bypasses the query layer. Query by testID.", severity="error")
+  },
+  `$name($...)` as $roley where {
+    $name <: r"^(?:get|query|find)(?:All)?By(?:Role|Text|LabelText|PlaceholderText|DisplayValue)$",
+    register_diagnostic(span=$roley, message="Prefer the testID query — give the element a testID and query by it; role/text queries are for elements that genuinely cannot carry one.", severity="error")
+  },
+  or {
+    `$_.getByRole($...)` as $roley,
+    `$_.getAllByRole($...)` as $roley,
+    `$_.queryByRole($...)` as $roley,
+    `$_.queryAllByRole($...)` as $roley,
+    `$_.findByRole($...)` as $roley,
+    `$_.findAllByRole($...)` as $roley,
+    `$_.getByText($...)` as $roley,
+    `$_.getAllByText($...)` as $roley,
+    `$_.queryByText($...)` as $roley,
+    `$_.queryAllByText($...)` as $roley,
+    `$_.findByText($...)` as $roley,
+    `$_.findAllByText($...)` as $roley,
+    `$_.getByLabelText($...)` as $roley,
+    `$_.getAllByLabelText($...)` as $roley,
+    `$_.queryByLabelText($...)` as $roley,
+    `$_.queryAllByLabelText($...)` as $roley,
+    `$_.findByLabelText($...)` as $roley,
+    `$_.findAllByLabelText($...)` as $roley,
+    `$_.getByPlaceholderText($...)` as $roley,
+    `$_.getAllByPlaceholderText($...)` as $roley,
+    `$_.queryByPlaceholderText($...)` as $roley,
+    `$_.queryAllByPlaceholderText($...)` as $roley,
+    `$_.findByPlaceholderText($...)` as $roley,
+    `$_.findAllByPlaceholderText($...)` as $roley,
+    `$_.getByDisplayValue($...)` as $roley,
+    `$_.getAllByDisplayValue($...)` as $roley,
+    `$_.queryByDisplayValue($...)` as $roley,
+    `$_.queryAllByDisplayValue($...)` as $roley,
+    `$_.findByDisplayValue($...)` as $roley,
+    `$_.findAllByDisplayValue($...)` as $roley
+  } where {
+    register_diagnostic(span=$roley, message="Prefer the testID query — give the element a testID and query by it; role/text queries are for elements that genuinely cannot carry one.", severity="error")
+  }
+}

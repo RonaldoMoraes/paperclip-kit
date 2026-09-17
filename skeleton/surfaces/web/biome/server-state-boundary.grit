@@ -1,0 +1,42 @@
+// Server state reaches a screen only through a feature hook. A screen or component
+// that imports the query library, the transport, the auth client or a contract's
+// runtime values has taken on fetching, and its spec now has to mock the network
+// instead of the hook.
+// Scoped by biome.json to screens/ and components/ directories; specs are exempt
+// there, since a spec may read a contract's fixture. Type-only import statements
+// never match (the `not ^import type` clause), and a contract's pure modules are
+// allowed — `errors`, so a screen may narrow on an error class, `credentials`, so a
+// form may validate a field against the rule the endpoint enforces, and
+// `send-cooldown`, so a button may print the wait the way both apps do. None reaches
+// the network.
+//
+// JsImport + JsModuleSource cover every import clause shape; snippet forms
+// (`import { $names } from $src`) silently match only single-specifier clauses
+// in Biome's GritQL, so a multi-name import walks through them.
+language js
+
+or {
+  JsImport() as $stmt where {
+    $stmt <: contains JsModuleSource() as $src,
+    $stmt <: not r"^import\s+type\b[\s\S]*$",
+    or {
+      $src <: r"^[\"'](?:@tanstack/react-query|better-auth(?:/.*)?|~/lib/(?:http|auth)|\.\./(?:\.\./)*lib/(?:http|auth))[\"']$",
+      and {
+        $src <: r"^[\"']@contracts/[^\"'/]+/[^\"']+[\"']$",
+        not { $src <: r"^[\"']@contracts/[^\"'/]+/(?:errors|credentials|send-cooldown)[\"']$" }
+      },
+      $src <: r"^[\"']@contracts/[^\"'/]+[\"']$"
+    },
+    register_diagnostic(span=$src, message="A screen or component never reaches the network. Read server state from a features/<feature>/hooks/use*.ts hook and take the rest as props; `import type` from a contract is fine.", severity="error")
+  },
+  // Loaded data reaches a screen as props from the route component — a screen that
+  // calls useLoaderData has coupled itself to the router and can no longer be
+  // rendered bare in its spec.
+  JsImport() as $stmt where {
+    $stmt <: contains JsModuleSource() as $src,
+    $stmt <: not r"^import\s+type\b[\s\S]*$",
+    $src <: r"^[\"']@tanstack/react-router[\"']$",
+    $stmt <: r"[\s\S]*\buseLoaderData\b[\s\S]*",
+    register_diagnostic(span=$stmt, message="useLoaderData in a screen or component. The route component reads the loaded query (useSuspenseQuery) and passes it down as props.", severity="error")
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclip-kit.local/docs/module.schema.json",
+  "title": "Paperclip kit module.json",
+  "description": "The manifest of one skeleton layer: skeleton/modules/<id>/module.json, or an optional module.json (alias: surface.json) at the root of skeleton/base or skeleton/surfaces/<s>. Every key except `id` is optional. Full guide: docs/MODULES.md.",
+  "type": "object",
+  "required": ["id"],
+  "additionalProperties": false,
+  "$defs": {
+    "ref": {
+      "type": "object",
+      "required": ["import", "symbol"],
+      "additionalProperties": false,
+      "properties": {
+        "import": { "type": "string", "description": "Import path emitted verbatim into the gen file (server/contracts: relative to the gen file, e.g. ./auth/auth.module; web/mobile: the ~/ alias)", "minLength": 1 },
+        "symbol": { "type": "string", "description": "Named export to import", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$" }
+      }
+    },
+    "refList": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+    "packageFragment": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "dependencies": { "type": "object", "additionalProperties": { "type": "string" } },
+        "devDependencies": { "type": "object", "additionalProperties": { "type": "string" } },
+        "scripts": { "type": "object", "additionalProperties": { "type": "string" } },
+        "workspaces": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Must equal the directory name (base, web, mobile, or the module id)" },
+    "title": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "description": "One line, used in docs/README.md" },
+    "requires": {
+      "type": "array",
+      "description": "Module ids and/or surface names (web, mobile) that must be selected for this module to work",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "uniqueItems": true
+    },
+    "surfaces": {
+      "type": "array",
+      "description": "Informational: which client surfaces this module ships files for (files/apps/<surface>/** are copied only when that surface is selected regardless)",
+      "items": { "type": "string", "enum": ["web", "mobile"] },
+      "uniqueItems": true
+    },
+    "placeholders": {
+      "type": "array",
+      "description": "Extra __TOKENS__ this module's files use; the grill asks for them and stores values under manifest.placeholders",
+      "items": {
+        "type": "object",
+        "required": ["key", "question"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string", "pattern": "^__[A-Z][A-Z0-9_]*__$" },
+          "question": { "type": "string", "minLength": 1 },
+          "default": { "type": "string" }
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "modules": { "$ref": "#/$defs/refList", "description": "→ KIT_MODULES in apps/server/src/app.modules.gen.ts" },
+        "portDefaults": {
+          "type": "object",
+          "description": "Declare a port this layer owns, with the default provider that stands in until another layer claims it: { \"<port>\": { import, symbol } }. Base declares notification, analytics and telemetry; declaring one of those, or a port another layer already declares, is an error. Ship the default provider file — the import path is emitted verbatim",
+          "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "additionalProperties": { "$ref": "#/$defs/ref" }
+        },
+        "ports": {
+          "type": "object",
+          "description": "Claim a declared port with a real provider: { \"<port>\": { import, symbol } }. The port must be declared by some layer (server.portDefaults, or base's three) — requires the module that declares it; an unclaimed port keeps its declaring layer's default. Two claims on one port is an error",
+          "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "additionalProperties": { "$ref": "#/$defs/ref" }
+        },
+        "rawBodyPaths": { "type": "array", "items": { "type": "string", "pattern": "^/" }, "description": "→ KIT_RAW_BODY_PATHS (webhook paths that need the raw request body)" }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "handlers": { "$ref": "#/$defs/refList", "description": "Each symbol is a handler array; spread into KIT_HANDLERS in shared/contracts/mocks.gen.ts" }
+      }
+    },
+    "web": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "providers": { "$ref": "#/$defs/refList" },
+        "gates": { "$ref": "#/$defs/refList" },
+        "boot": { "$ref": "#/$defs/refList" },
+        "settingsActions": { "$ref": "#/$defs/refList", "description": "Each symbol is a SettingsAction[]; spread into KIT_SETTINGS_ACTIONS" }
+      }
+    },
+    "mobile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "providers": { "$ref": "#/$defs/refList" },
+        "gates": { "$ref": "#/$defs/refList" },
+        "boot": { "$ref": "#/$defs/refList" },
+        "settingsActions": { "$ref": "#/$defs/refList" }
+      }
+    },
+    "packages": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "root": { "$ref": "#/$defs/packageFragment" },
+        "mobile": { "$ref": "#/$defs/packageFragment" },
+        "tests": { "$ref": "#/$defs/packageFragment" },
+        "db": { "$ref": "#/$defs/packageFragment" }
+      }
+    },
+    "biome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "plugins": { "type": "array", "items": { "type": "string" } },
+        "overrides": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "canaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["plugin", "fixture", "dest", "expect"],
+        "additionalProperties": false,
+        "properties": {
+          "plugin": { "type": "string" },
+          "fixture": { "type": "string" },
+          "dest": { "type": "string" },
+          "expect": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["needle"],
+              "additionalProperties": false,
+              "properties": { "needle": { "type": "string" }, "min": { "type": "integer", "minimum": 1 } }
+            }
+          }
+        }
+      }
+    },
+    "hooks": {
+      "type": "array",
+      "description": "Appended to .claude/settings.json hooks.PostToolUse[0].hooks (type defaults to command)",
+      "items": {
+        "type": "object",
+        "required": ["command"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "type": "string", "enum": ["command"] },
+          "if": { "type": "string" },
+          "command": { "type": "string" },
+          "timeout": { "type": "integer", "minimum": 1 },
+          "statusMessage": { "type": "string" }
+        }
+      }
+    },
+    "docs": { "type": "string", "pattern": "^docs/[a-z0-9-]+\\.md$", "description": "Path (relative to the module dir and to the product root) of the module's doc page; a line is inserted at <!-- kit:modules --> in docs/README.md" },
+    "testContractAllow": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "rule", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "rule": { "type": "string", "enum": ["unit", "e2e"] },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "postScaffold": { "type": "array", "items": { "type": "string" }, "description": "Notes printed after the scaffold, e.g. \"run yarn db:generate\"" }
+  }
+}

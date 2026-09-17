@@ -1,0 +1,21 @@
+// The MongoDB driver is quarantined behind the store adapters in
+// apps/server/src/analytics/providers/. Everything else — features, controllers, even the
+// rest of the analytics domain — talks to the AnalyticsClient port
+// (apps/server/src/common/ports/analytics.ts) through ANALYTICS_CLIENT. A driver import
+// anywhere else would typecheck and work, and quietly couple a feature to one storage
+// engine's API surface — and hand it a raw database handle analytics is meant to hide.
+//
+// JsModuleSource is the source-string node of every static import and re-export;
+// snippet forms (`import $x from $src`) silently match only single-specifier
+// clauses in Biome's GritQL, so a multi-name import walks through them.
+language js
+
+or {
+  JsModuleSource() as $src,
+  `require($src)`,
+  `import($src)`
+} where {
+  $src <: r"^[\"'`]mongodb(?:[\"'`]$|/.*)",
+  not $filename <: r".*apps/server/src/analytics/providers/.*\.tsx?$",
+  register_diagnostic(span=$src, message="The MongoDB driver (mongodb) may only be imported inside apps/server/src/analytics/providers/. Everything else injects ANALYTICS_CLIENT and talks to the AnalyticsClient port.", severity="error")
+}

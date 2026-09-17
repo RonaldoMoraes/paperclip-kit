@@ -1,0 +1,23 @@
+// Design-system invariants that a class string can break silently. Colors exist only as
+// tokens (shared/ui/tokens.css → tailwind theme); motion is Motion springs, never a
+// blanket CSS transition; display type comes from the fluid theme entries.
+// The anchored regexes match a string or template literal node by its own source
+// (quote to quote), so a diagnostic lands on the literal, not on its ancestors.
+language js
+
+or {
+  $s where {
+    $s <: r"^[\"'`][\s\S]*\[#[0-9a-fA-F]{3,8}\][\s\S]*[\"'`]$",
+    register_diagnostic(span=$s, message="Arbitrary hex color in a class string. Add the color to shared/ui/tokens.css and name it in the Tailwind theme, then use the theme class.", severity="error")
+  },
+  $s where {
+    $s <: r"^[\"'`][\s\S]*\btransition-all\b[\s\S]*[\"'`]$",
+    register_diagnostic(span=$s, message="`transition-all` is banned. Transition the specific properties (e.g. transition-colors), or use Motion for movement.", severity="error")
+  },
+  // Display type comes from the fluid theme entries (text-display-1/2, text-title-1/2,
+  // text-micro). 24px is the display threshold: body sizes below it in px are fine.
+  $s where {
+    $s <: r"^[\"'`][\s\S]*\btext-\[(?:2[4-9]|[3-9][0-9]|[0-9]{3,})px\][\s\S]*[\"'`]$",
+    register_diagnostic(span=$s, message="Display-sized arbitrary text class. Display type uses the fluid theme entries (text-display-1/2, text-title-1/2, text-micro); body sizes under 24px may stay in px.", severity="error")
+  }
+}

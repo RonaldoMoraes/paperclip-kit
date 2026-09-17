@@ -1,0 +1,25 @@
+// Notification vendor SDKs are quarantined behind the provider adapters in
+// apps/server/src/notification/providers/. Everything else — features, controllers, even
+// the rest of the notification domain — talks to the NotificationClient port
+// (apps/server/src/common/ports/notification.ts) through NOTIFICATION_CLIENT. An SDK
+// import anywhere else would typecheck and work, and quietly couple a feature to one
+// vendor's API surface — and, worse, send in an environment that thought it was fake.
+//
+// The quarantine covers each vendor's whole scope (@sendgrid/*, twilio, @twilio/*,
+// expo-server-sdk): a scoped sibling like @sendgrid/client is the same vendor surface
+// as @sendgrid/mail. No exemptions — OTP mail and every other send go through the port.
+//
+// JsModuleSource is the source-string node of every static import and re-export;
+// snippet forms (`import $x from $src`) silently match only single-specifier
+// clauses in Biome's GritQL, so a multi-name import walks through them.
+language js
+
+or {
+  JsModuleSource() as $src,
+  `require($src)`,
+  `import($src)`
+} where {
+  $src <: r"^[\"'`](?:@sendgrid/[^\"'`/]+|twilio|@twilio/[^\"'`/]+|expo-server-sdk)(?:[\"'`]$|/.*)",
+  not $filename <: r".*apps/server/src/notification/providers/.*\.tsx?$",
+  register_diagnostic(span=$src, message="Notification vendor SDKs (@sendgrid/*, twilio, @twilio/*, expo-server-sdk) may only be imported inside apps/server/src/notification/providers/. Everything else injects NOTIFICATION_CLIENT and talks to the NotificationClient port.", severity="error")
+}

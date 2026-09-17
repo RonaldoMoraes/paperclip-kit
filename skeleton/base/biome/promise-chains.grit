@@ -1,0 +1,14 @@
+// A promise chain hides its control flow: the failure path sits at the bottom, after the
+// happy path, and what each step returns is only inferable by reading the whole chain.
+// An async function with try/catch reads top to bottom and puts the failure beside the
+// call that can fail. A single `.then` mapper is not a chain — `lazy(() => import(x)
+// .then(m => ({ default: m.Y })))` is React's own idiom and stays.
+language js
+
+or {
+  `$head.then($_).then($_)` as $chain,
+  `$head.then($_).catch($_)` as $chain,
+  `$head.then($_, $_).catch($_)` as $chain
+} where {
+  register_diagnostic(span=$chain, message="Write it as an async function with try/catch — promise chains are not read here.", severity="error")
+}

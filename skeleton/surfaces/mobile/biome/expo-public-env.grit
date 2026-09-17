@@ -1,0 +1,17 @@
+// `EXPO_PUBLIC_*` is inlined by the bundler at build time, so a read is a constant baked
+// into whichever binary was built — not something the app can be told at runtime. Read
+// from wherever it acts and the same variable ends up with two defaults, one of them
+// wrong on the phone that matters, and nothing in `.env.example` says the second one
+// exists. Every one of them is catalogued there and read where it enters the app:
+// `src/lib/config.ts` (the API and web URLs, the scheme), `index.ts` (the run mode),
+// `src/lib/mock-mode/**` (what the mocks boot as) and `app.config.js` (native identity).
+// Everything else takes the value as an import from one of those.
+//
+// Anchored regex on the node's own source, the shape `client-storage.grit` uses. Scoped by
+// biome.json to apps/mobile minus those four.
+language js
+
+$s where {
+  $s <: r"^process\.env\.EXPO_PUBLIC_[A-Z0-9_]*$",
+  register_diagnostic(span=$s, message="An EXPO_PUBLIC_* variable is read in src/lib/config.ts, index.ts, src/lib/mock-mode/** or app.config.js, and nowhere else — it is inlined at build time, so a second read is a second default. Import the value from src/lib/config.ts.", severity="error")
+}

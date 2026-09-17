@@ -1,0 +1,65 @@
+/// What `@better-auth/stripe` writes, column for column — the plugin's own field names on
+/// the left of `schema.subscription.fields` in `apps/server/src/subscription/stripe-plugin.ts`,
+/// these snake_case columns on the right. The model name is the table name on purpose:
+/// Better Auth's `modelName` is the Prisma client property, and one spelling for both is one
+/// fewer thing to keep in step.
+///
+/// `id` is an `Int` the database hands out (`generateId: "serial"` in the auth config).
+/// Better Auth reads and writes it as a string, and the Checkout Session carries it back as
+/// `metadata.subscriptionId` — which is what `confirmCheckout` settles the row by.
+///
+/// `reference_id` is the Better Auth user id as a string: one person, one subscription, and
+/// every read is scoped by it (`subscription.service.ts`). It is not a foreign key — Better
+/// Auth's `referenceId` is deliberately opaque, so a product that sells to a team rather
+/// than to a person changes what it puts there and nothing else.
+model subscription {
+  id                     Int       @id @default(autoincrement())
+  reference_id           String    @db.VarChar(64)
+  /// Who sold it, and therefore where it can be managed: `stripe` for a checkout on the web,
+  /// another seller's own name for a purchase made anywhere else. Every seller writes it
+  /// explicitly on the rows it opens — the default is a floor for a row that predates a
+  /// second seller, never the way the column is meant to be filled.
+  provider               String    @default("stripe") @db.VarChar(32)
+  plan                   String    @db.VarChar(64)
+  status                 String    @default("incomplete") @db.VarChar(32)
+  stripe_customer_id     String?   @db.VarChar(255)
+  stripe_subscription_id String?   @db.VarChar(255)
+  period_start           DateTime? @db.Timestamptz(6)
+  period_end             DateTime? @db.Timestamptz(6)
+  trial_start            DateTime? @db.Timestamptz(6)
+  trial_end              DateTime? @db.Timestamptz(6)
+  cancel_at_period_end   Boolean   @default(false)
+  /// the billing portal's shape of an ending: a scheduled stop, with the flag above false
+  cancel_at              DateTime? @db.Timestamptz(6)
+  canceled_at            DateTime? @db.Timestamptz(6)
+  ended_at               DateTime? @db.Timestamptz(6)
+  seats                  Int?
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([reference_id])
+  @@index([stripe_subscription_id])
+  @@index([stripe_customer_id])
+}
+
+/// The trail every webhook leaves — written after the plugin has handled the delivery, so
+/// it is a record of what happened rather than a queue to work through.
+///
+/// `(provider, provider_event_id)` is unique, and that unique index is the whole of the
+/// deduplication: Stripe redelivers, and a redelivery collides here instead of doubling a
+/// row. `payload` is `JsonB` because it is read and queried — "what did Stripe actually
+/// send us" is the first question asked of a billing incident.
+model webhook_event {
+  id                  Int      @id @default(autoincrement())
+  provider            String   @db.VarChar(32)
+  provider_event_id   String   @db.VarChar(255)
+  provider_event_type String   @db.VarChar(128)
+  /// the provider's subscription id the event is about, when it names one
+  subscription_id     String?  @db.VarChar(255)
+  event_occurred_at   DateTime @db.Timestamptz(6)
+  payload             Json     @db.JsonB
+  received_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([provider, provider_event_id])
+  @@index([subscription_id])
+}

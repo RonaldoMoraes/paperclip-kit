@@ -1,0 +1,31 @@
+// `react-native-purchases` is quarantined behind the store seam in
+// apps/mobile/src/lib/store/. Everything else — screens, hooks, routes, the settings rows —
+// talks to the `Store` type in `src/lib/store/types.ts` through `~/lib/store`, which is what
+// lets mock mode swap the whole store out for a canned one.
+//
+// Two things go wrong without the quarantine, and neither shows up in a typecheck. The
+// module is native: a second import site is another file that throws at load on Expo Go and
+// on any dev client built before the module was added, and mock mode — which never touches
+// the store — goes down with it. And an SDK call from a screen is entitlement decided on the
+// device: `customerInfo.entitlements` is the phone's word about what was bought, where this
+// product's answer is the server's, computed once and carried on the session.
+//
+// No exemptions. The adapter is the one file that may see the SDK, and the lazy
+// `import("react-native-purchases")` inside it is deliberate — a static one would defeat the
+// point. `import type` fires too: a type from the SDK in a screen is a screen shaped around
+// the vendor.
+//
+// JsModuleSource is the source-string node of every static import and re-export; snippet
+// forms (`import $x from $src`) silently match only single-specifier clauses in Biome's
+// GritQL, so a multi-name import walks through them.
+language js
+
+or {
+  JsModuleSource() as $src,
+  `require($src)`,
+  `import($src)`
+} where {
+  $src <: r"^[\"'`]react-native-purchases(?:[\"'`]$|/.*)",
+  not $filename <: r".*apps/mobile/src/lib/store/.*\.tsx?$",
+  register_diagnostic(span=$src, message="react-native-purchases may only be imported inside apps/mobile/src/lib/store/. Everything else goes through the Store seam (`~/lib/store`) — that is what keeps mock mode off the native module, and what keeps entitlement the server's answer rather than the device's.", severity="error")
+}

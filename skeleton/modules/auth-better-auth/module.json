@@ -1,0 +1,108 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "auth-better-auth",
+  "title": "Auth (Better Auth)",
+  "summary": "email-code sign-in with optional Google and Apple; one session on both transports (the browser's cookie jar, the phone's `Cookie` header from secure storage); `SessionGuard` for any endpoint; the sign-in screen on web and mobile; sign out and delete account on Settings; a mocked session that is a real cookie",
+  "requires": [
+    "db-prisma"
+  ],
+  "surfaces": [
+    "web",
+    "mobile"
+  ],
+  "placeholders": [
+    {
+      "key": "__AUTH_FROM_EMAIL__",
+      "question": "Which address sends the sign-in codes?",
+      "default": "no-reply@__DOMAIN__"
+    }
+  ],
+  "server": {
+    "modules": [
+      {
+        "import": "./auth/auth.module",
+        "symbol": "AuthModule"
+      },
+      {
+        "import": "./account/account.module",
+        "symbol": "AccountModule"
+      }
+    ],
+    "portDefaults": {
+      "auth-extensions": {
+        "import": "./auth/auth.extensions",
+        "symbol": "NoAuthExtensionsProvider"
+      }
+    }
+  },
+  "contracts": {
+    "handlers": [
+      {
+        "import": "./auth",
+        "symbol": "handlers"
+      },
+      {
+        "import": "./account",
+        "symbol": "handlers"
+      }
+    ]
+  },
+  "web": {
+    "gates": [
+      {
+        "import": "~/lib/session",
+        "symbol": "requireSession"
+      }
+    ],
+    "settingsActions": [
+      {
+        "import": "~/features/account/settingsActions",
+        "symbol": "settingsActions"
+      }
+    ]
+  },
+  "mobile": {
+    "boot": [
+      {
+        "import": "~/lib/session",
+        "symbol": "bootSession"
+      }
+    ],
+    "gates": [
+      {
+        "import": "~/lib/session",
+        "symbol": "useSessionGate"
+      }
+    ],
+    "settingsActions": [
+      {
+        "import": "~/features/account/settingsActions",
+        "symbol": "settingsActions"
+      }
+    ]
+  },
+  "packages": {
+    "root": {
+      "dependencies": {
+        "@better-auth/core": "@versions",
+        "@better-auth/expo": "@versions",
+        "better-auth": "@versions"
+      }
+    },
+    "mobile": {
+      "dependencies": {
+        "@better-auth/expo": "@versions",
+        "@tanstack/react-form": "@versions",
+        "expo-secure-store": "@versions",
+        "expo-web-browser": "@versions"
+      }
+    }
+  },
+  "docs": "docs/auth-better-auth.md",
+  "postScaffold": [
+    "yarn db:generate && yarn db:migrate --name auth  (the four auth tables: user, auth_session, account, verification)",
+    "set BETTER_AUTH_SECRET in .env (at least 32 characters: `openssl rand -base64 32`) and BETTER_AUTH_URL to the origin the browser uses (http://localhost:5173 in dev — Vite proxies /api to the server)",
+    "optional: GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET and APPLE_CLIENT_ID/APPLE_CLIENT_SECRET turn the provider buttons on; without a pair the provider is not registered and its button answers with a refusal",
+    "mock mode boots signed in as the mock user (shared/contracts/mock-session.ts); sign out from Settings to reach the sign-in screen, then any email + code 12345 signs back in"
+  ]
+}

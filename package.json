@@ -1,0 +1,12 @@
+{
+  "name": "paperclip-kit",
+  "private": true,
+  "description": "Company layer + engineering layer + product scaffold for Claude Code. Zero dependencies; the scaffold is bin/lib/scaffold.mjs.",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=22" },
+  "volta": { "node": "22.17.1" },
+  "scripts": {
+    "test": "node --test bin/lib/*.test.mjs",
+    "scaffold": "node bin/lib/scaffold.mjs"
+  }
+}

@@ -1,0 +1,3 @@
+# Modules
+
+Each directory here is one opt-in overlay: `<id>/module.json` (what it contributes to the gen and merged files, what it requires, what to print after the scaffold), `<id>/files/**` (copied over base and surfaces, placeholders substituted), `<id>/docs/<id>.md` (its page in the product's `docs/`). A module never edits a base file — it plugs into a slot, merges a fragment, adds a new file, or requires another module. Every module must pass all six gates alone on top of base (plus its `requires`) and together with all the others. The authoring guide, the full `module.json` spec and the checklist for a new module are in [`../../docs/MODULES.md`](../../docs/MODULES.md).

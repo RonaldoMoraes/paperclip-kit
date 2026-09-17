@@ -1,0 +1,162 @@
+name: CI
+
+# One job, path-filtered: docs-only changes do not spend a runner. Every gate is a root
+# package.json script, so what CI runs is what `yarn <gate>` runs on a laptop. Steps whose
+# script a surface or module adds (db:generate, the Playwright suites) run only when that
+# script exists — the `scripts` step reads package.json once and every later `if` keys off it.
+on:
+  push:
+    branches:
+      - __TRUNK__
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".spec/**"
+  pull_request:
+    branches:
+      - __TRUNK__
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".spec/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+  # Hermetic e2e — tests/fixtures/web.ts answers every /api from shared/contracts.
+  API_MODE: mock
+
+jobs:
+  ci:
+    name: Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Node from the volta pin in package.json; yarn from `packageManager` through corepack.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # Which optional gates exist in this tree (surfaces and modules add them).
+      - name: Read package scripts
+        id: scripts
+        run: |
+          node -e '
+            const s = require("./package.json").scripts ?? {};
+            const out = [];
+            for (const name of ["db:generate", "routes:generate", "test:e2e:validate", "test:web:contract", "test:web:smoke", "test:web:regression"]) {
+              out.push(`${name.replace(/[:-]/g, "_")}=${name in s}`);
+            }
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, out.join("\n") + "\n");
+          '
+
+      # The database seam re-exports the generated client (gitignored); typecheck and the
+      # server tests need it on disk. Generates from the schema alone, no database.
+      - name: Generate database client
+        if: steps.scripts.outputs.db_generate == 'true'
+        run: yarn db:generate
+
+      # The web route tree is generated, never committed: typecheck, the unit tests and the
+      # Playwright suites need it on disk. Web surface only.
+      - name: Generate route tree
+        if: steps.scripts.outputs.routes_generate == 'true'
+        run: yarn routes:generate
+
+      - name: Type check
+        run: yarn typecheck
+
+      # Biome over the whole tree: the backlog is zero, so any new diagnostic is this change's.
+      - name: Lint
+        run: yarn lint
+
+      # The guard canary: every GritQL plugin must produce its diagnostic on a
+      # known-violating fixture. A green lint with dead plugins is the failure
+      # mode this step exists to catch.
+      - name: Lint guard canary
+        run: yarn lint:guards
+
+      # Structural gate: every screen has a unit spec, every routed web screen has a
+      # journey e2e spec, every controller/service has a spec. Fails listing what is missing.
+      - name: Testing contract
+        run: yarn test:contract
+
+      - name: Unit tests
+        run: yarn test
+
+      # E2E quality gates (element catalog, no raw locators) — web surface only.
+      - name: E2E validate
+        if: steps.scripts.outputs.test_e2e_validate == 'true'
+        run: yarn test:e2e:validate
+
+      - name: Install Playwright chromium
+        if: steps.scripts.outputs.test_web_contract == 'true'
+        run: yarn --cwd tests playwright install --with-deps chromium
+
+      # Hermetic web suites: an unmocked /api fails the test.
+      - name: Web contract (Playwright)
+        if: steps.scripts.outputs.test_web_contract == 'true'
+        run: yarn test:web:contract
+
+      - name: Web smoke (Playwright)
+        if: ${{ !cancelled() && steps.scripts.outputs.test_web_smoke == 'true' }}
+        run: yarn test:web:smoke
+
+      - name: Web regression (Playwright)
+        if: ${{ !cancelled() && steps.scripts.outputs.test_web_regression == 'true' }}
+        run: yarn test:web:regression
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() && steps.scripts.outputs.test_web_contract == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report--attempt-${{ github.run_attempt }}
+          path: |
+            tests/playwright-report
+            tests/.artifacts
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # ── Image (push to trunk only) ──────────────────────────────────────────
+      # Proves the Dockerfile builds from a merged commit. Not pushed: where the image
+      # goes and how it is deployed is the host's decision — see deploy/config.yaml for
+      # the per-environment shape (buildArgs → envVars → secrets → runtime) and swap in
+      # the provider's login/push/deploy steps below.
+
+      - name: Set up Docker Buildx
+        if: github.event_name == 'push' && github.ref == 'refs/heads/__TRUNK__'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/__TRUNK__'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          tags: __PRODUCT_SLUG__:${{ github.sha }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Deploy slot — replace with the host's steps, e.g.
+      #   - registry login + `push: true` on the build step
+      #   - `yarn db:migrate:deploy` against the environment's database (db module)
+      #   - the provider's deploy command fed from deploy/config.yaml (envVars, secrets, runtime)
+      # A production promotion stays a manual step — see deploy/config.yaml.

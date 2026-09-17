@@ -1,0 +1,39 @@
+{
+  "$schema": "../docs/manifest.schema.json",
+  "product": {
+    "slug": "acme-notes",
+    "name": "Acme Notes",
+    "scope": "acme",
+    "domain": "notes.acme.com",
+    "cookiePrefix": "acme-notes",
+    "bundleId": "com.acme.notes",
+    "scheme": "acmenotes",
+    "trunk": "development",
+    "dbName": "acme_notes"
+  },
+  "surfaces": ["web", "mobile"],
+  "modules": ["db-prisma", "auth-better-auth", "analytics", "observability-sentry", "llm"],
+  "placeholders": {},
+  "answers": {
+    "product": "A notes app that turns a messy voice memo into a clean, searchable note.",
+    "users": "Individuals; the product calls them \"the user\".",
+    "dayOne": "Day 1: record one memo and read the clean note. Every day: capture, search, revisit.",
+    "designSource": "Figma file \"Acme Notes v1\"; it wins on style and copy.",
+    "surfacesNote": "Phone-width web first, native fast-follow through Expo; nothing is one-platform on purpose yet.",
+    "repo": "Standalone repo, no shared packages, no monorepo.",
+    "data": "Postgres through Prisma, own database. No PHI; ordinary PII (email). Notes kept until the user deletes them.",
+    "auth": "Email OTP now, Apple and Google later. Cookie on web, header from secure storage on mobile. OTP rate-limited at the controller.",
+    "payments": "None for launch; revisit after 500 weekly actives.",
+    "llm": "One provider with failover to a second; streaming for the note view; structured output for the summary; no customer text leaves the building without the provider's zero-retention setting.",
+    "notifications": "None for launch.",
+    "analytics": "Own event store; first funnel: record → note ready → second session.",
+    "hosting": "Container on a managed runtime; GitHub Actions; secrets in the host's secret manager; mobile builds through EAS, each paid build needs a per-instance approval.",
+    "compliance": "GDPR only: export and delete on request.",
+    "team": "Solo developer, one lane.",
+    "tickets": "GitHub issues; branch names type/ISSUE-123-short-name.",
+    "languages": "Code, git and tickets in English; product docs in English.",
+    "naming": "Trunk is development; release branches releases/vX.Y.Z; port base 3000/5173/8300.",
+    "workingStyle": "Defaults accepted: small undoable steps, mock-first, proof proportional to the change, no git writes unless asked. Pre-seed the 7 company roles + 3 engineering roles; hire the rest on demand."
+  },
+  "kit": { "version": "0.2.0" }
+}

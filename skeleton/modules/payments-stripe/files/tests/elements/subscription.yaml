@@ -1,0 +1,40 @@
+# The plan screen — web only: `apps/web/src/features/subscription/screens/Subscription.tsx`
+# (/subscription), which sits behind the `_app/_paid` entitlement layout.
+
+subscription_title:
+  web:
+    locator: testid
+    value: subscription-title
+  mobile: none
+
+subscription_plan:
+  web:
+    locator: testid
+    value: subscription-plan
+  mobile: none
+
+subscription_dates:
+  web:
+    locator: testid
+    value: subscription-dates
+  mobile: none
+
+subscription_manage_billing:
+  web:
+    locator: testid
+    value: subscription-manage-billing
+  mobile: none
+
+subscription_error:
+  web:
+    locator: testid
+    value: subscription-error
+  mobile: none
+
+# Shown instead of the button when the plan was bought in a store: this app cannot manage it,
+# and the server refuses the call even if a client asks.
+subscription_managed_elsewhere:
+  web:
+    locator: testid
+    value: subscription-managed-elsewhere
+  mobile: none

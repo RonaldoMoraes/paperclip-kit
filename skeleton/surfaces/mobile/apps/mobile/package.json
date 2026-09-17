@@ -1,0 +1,91 @@
+{
+  "name": "@__SCOPE__/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --port ${METRO_PORT:-8300}",
+    "start:mock": "EXPO_PUBLIC_API_MODE=mock expo start --port ${METRO_PORT:-8300}",
+    "android": "expo run:android --port ${METRO_PORT:-8300}",
+    "ios": "expo run:ios --port ${METRO_PORT:-8300}",
+    "prebuild": "expo prebuild",
+    "doctor": "expo-doctor",
+    "typecheck": "expo customize tsconfig.json && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "assets:placeholders": "node scripts/render-placeholder-assets.mjs",
+    "eas:build:dev:android": "eas build --platform android --profile development",
+    "eas:build:dev:ios": "eas build --platform ios --profile development",
+    "eas:build:preview": "eas build --platform all --profile preview --no-wait",
+    "eas:build:prod": "eas build --platform all --profile production --no-wait",
+    "eas:update:dev": "eas update --channel development --environment development",
+    "eas:update:preview": "eas update --channel preview --environment preview",
+    "eas:update:prod": "eas update --channel production --environment production",
+    "eas:workflow:dev": "eas workflow:run .eas/workflows/development.yml",
+    "eas:workflow:preview": "eas workflow:run .eas/workflows/preview.yml",
+    "eas:workflow:prod": "eas workflow:run .eas/workflows/production.yml",
+    "eas:workflow:validate": "eas workflow:validate .eas/workflows/development.yml && eas workflow:validate .eas/workflows/preview.yml && eas workflow:validate .eas/workflows/production.yml",
+    "fetch-build": "node scripts/fetch-build.mjs"
+  },
+  "dependencies": {
+    "@expo-google-fonts/inter": "@versions",
+    "@react-navigation/bottom-tabs": "@versions",
+    "@tanstack/react-query": "@versions",
+    "class-variance-authority": "@versions",
+    "clsx": "@versions",
+    "event-target-shim": "@versions",
+    "expo": "@versions",
+    "expo-constants": "@versions",
+    "expo-dev-client": "@versions",
+    "expo-font": "@versions",
+    "expo-linking": "@versions",
+    "expo-network": "@versions",
+    "expo-router": "@versions",
+    "expo-splash-screen": "@versions",
+    "expo-updates": "@versions",
+    "fast-text-encoding": "@versions",
+    "lucide-react-native": "@versions",
+    "msw": "@versions",
+    "nativewind": "@versions",
+    "react": "@versions",
+    "react-dom": "@versions",
+    "react-native": "@versions",
+    "react-native-reanimated": "@versions",
+    "react-native-safe-area-context": "@versions",
+    "react-native-screens": "@versions",
+    "react-native-svg": "@versions",
+    "react-native-url-polyfill": "@versions",
+    "react-native-web": "@versions",
+    "react-native-worklets": "@versions",
+    "tailwind-merge": "@versions",
+    "zod": "@versions"
+  },
+  "devDependencies": {
+    "@babel/core": "@versions",
+    "@testing-library/dom": "@versions",
+    "@testing-library/jest-dom": "@versions",
+    "@testing-library/react": "@versions",
+    "@testing-library/user-event": "@versions",
+    "@types/node": "@versions",
+    "@types/react": "@versions",
+    "babel-preset-expo": "@versions",
+    "expo-doctor": "@versions",
+    "jsdom": "@versions",
+    "tailwindcss": "@versions",
+    "typescript": "@versions",
+    "vitest": "@versions"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "@types/react"
+      ]
+    }
+  },
+  "volta": {
+    "extends": "../../package.json"
+  },
+  "engines": {
+    "node": ">=22.17.1"
+  }
+}

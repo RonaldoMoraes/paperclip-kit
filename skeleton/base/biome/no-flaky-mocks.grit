@@ -1,0 +1,12 @@
+// Mocking patterns that make specs order-dependent or silently half-real.
+// Scoped by biome.json to *.spec.ts / *.spec.tsx under apps/** and shared/**.
+language js
+
+or {
+  `vi.hoisted($...)` as $hoisted where {
+    register_diagnostic(span=$hoisted, message="vi.hoisted() is banned. Vitest already hoists vi.mock() — declare a plain `const mockX = vi.fn();` at file scope, reference it inside the factory, and keep vi.mock() at the bottom of the file.", severity="error")
+  },
+  `importOriginal` as $original where {
+    register_diagnostic(span=$original, message="await importOriginal / spreading the real module in a vi.mock() factory is banned — no partial 'real' mocks. List only the exports this spec needs in the factory.", severity="error")
+  }
+}

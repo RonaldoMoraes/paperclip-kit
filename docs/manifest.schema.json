@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclip-kit.local/docs/manifest.schema.json",
+  "title": "Paperclip project manifest",
+  "description": "What /grill writes to .paperclip/project.manifest.json and what bin/scaffold.sh reads. Only what changes the generated tree is structured; everything else the interview learned goes under `answers`.",
+  "type": "object",
+  "required": ["product", "surfaces", "modules", "kit"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "product": {
+      "type": "object",
+      "required": ["slug", "name", "scope"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "kebab-case product id: package names, cookie prefix default, scheme default, db name default (__PRODUCT_SLUG__)",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "description": "Human name shown in app chrome, docs and README (__PRODUCT_NAME__)",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "scope": {
+          "type": "string",
+          "description": "npm scope without the @ — workspaces are @<scope>/e2e, @<scope>/db (__SCOPE__)",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "maxLength": 64
+        },
+        "domain": {
+          "type": "string",
+          "description": "Production host name, e.g. app.acme.com (__DOMAIN__); default <slug>.example.com",
+          "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$"
+        },
+        "cookiePrefix": {
+          "type": "string",
+          "description": "Prefix for every cookie the product sets (__COOKIE_PREFIX__); default = slug",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "bundleId": {
+          "type": "string",
+          "description": "iOS bundle id / Android application id (__BUNDLE_ID__); default com.<scope>.<slug without dashes>",
+          "pattern": "^[A-Za-z][A-Za-z0-9]*(\\.[A-Za-z][A-Za-z0-9]*)+$"
+        },
+        "scheme": {
+          "type": "string",
+          "description": "Deep-link URL scheme for the mobile app (__SCHEME__); default = slug",
+          "pattern": "^[a-z][a-z0-9+.-]*$"
+        },
+        "trunk": {
+          "type": "string",
+          "description": "Trunk branch that feature branches are cut from (__TRUNK__); default development",
+          "minLength": 1
+        },
+        "dbName": {
+          "type": "string",
+          "description": "Local database name (__DB_NAME__); default = slug with dashes replaced by underscores",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        }
+      }
+    },
+    "surfaces": {
+      "type": "array",
+      "description": "Client surfaces to generate. The server and the shared layers are always generated.",
+      "items": { "type": "string", "enum": ["web", "mobile"] },
+      "uniqueItems": true
+    },
+    "modules": {
+      "type": "array",
+      "description": "Module ids from skeleton/modules/<id>, in any order; the scaffold resolves `requires` and orders them.",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "uniqueItems": true
+    },
+    "placeholders": {
+      "type": "object",
+      "description": "Values for the extra placeholders a selected module declares in its module.json `placeholders` (key = the __NAME__ token).",
+      "propertyNames": { "pattern": "^__[A-Z][A-Z0-9_]*__$" },
+      "additionalProperties": { "type": "string" }
+    },
+    "answers": {
+      "type": "object",
+      "description": "The grill's free-form record of every confirmed answer. Read by Claude after the scaffold; never by the scaffold itself. Keys below are the conventional ones; any other key is allowed.",
+      "properties": {
+        "product": { "type": "string", "description": "One sentence: what it is" },
+        "users": { "type": "string", "description": "Who the user is and the word the product uses for them" },
+        "dayOne": { "type": "string", "description": "What the user does on day 1 / every day" },
+        "designSource": { "type": "string", "description": "Named design source of truth (Figma, prototype, none) and whether it wins on style/copy" },
+        "surfacesNote": { "type": "string", "description": "Mobile-first vs web-first, one-platform features on purpose" },
+        "repo": { "type": "string", "description": "Standalone vs monorepo, existing shared packages, the sanctioned seam" },
+        "data": { "type": "string", "description": "ORM/DB, own vs shared database, PHI/PII, retention" },
+        "auth": { "type": "string", "description": "Methods, transports, rate limits" },
+        "payments": { "type": "string", "description": "None / Stripe web / store / both; trial policy; who decides access" },
+        "llm": { "type": "string", "description": "None / one provider / multi-provider; streaming; structured output; what may leave the building" },
+        "notifications": { "type": "string", "description": "Email/push/SMS providers, anti-abuse" },
+        "analytics": { "type": "string", "description": "Event store, the first funnel, the PHI contract" },
+        "hosting": { "type": "string", "description": "Where it deploys, CI shape, secrets location, paid build steps" },
+        "compliance": { "type": "string", "description": "HIPAA/SOC2/GDPR, redaction, de-identification, ad-policy constraints" },
+        "team": { "type": "string", "description": "Solo vs lanes, how many developers, lane split" },
+        "tickets": { "type": "string", "description": "Ticketing system and project key used in branch names" },
+        "languages": { "type": "string", "description": "Language of code/git/tickets and of product docs" },
+        "naming": { "type": "string", "description": "Anything about naming that is not already in `product`" },
+        "workingStyle": { "type": "string", "description": "Confirmed working-style defaults and deviations; roles to pre-seed" }
+      },
+      "additionalProperties": true
+    },
+    "kit": {
+      "type": "object",
+      "required": ["version"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "string", "description": "Kit version the manifest was written against (the kit's VERSION file)", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([-+][0-9A-Za-z.-]+)?$" }
+      }
+    }
+  }
+}

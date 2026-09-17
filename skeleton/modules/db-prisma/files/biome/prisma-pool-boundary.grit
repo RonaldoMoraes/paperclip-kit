@@ -1,0 +1,24 @@
+// A Prisma pool is built in apps/server/src/database/ and nowhere else. The client every
+// consumer holds is the composed one (`PRISMA` in Nest, `openPrisma()` in a script): it
+// carries the product's scope (`scope-extension.ts`) and shares the one pool the process
+// opened. A pool built anywhere else typechecks, works, and is a second set of connections
+// with none of the scope — a soft-deleted row is visible to it. Without the adapter there is
+// no pool, so the adapter import is the line. The db workspace's own scripts (db/prisma/ —
+// the seed, a backfill) are the one other home: they run from the Prisma CLI, before and
+// without the server.
+//
+// JsModuleSource is the source-string node of every static import and re-export;
+// snippet forms (`import $x from $src`) silently match only single-specifier
+// clauses in Biome's GritQL, so a multi-name import walks through them.
+language js
+
+or {
+  JsModuleSource() as $src,
+  `require($src)`,
+  `import($src)`
+} where {
+  $src <: r"^[\"'`]@prisma/adapter-pg(?:[\"'`]$|/.*)",
+  not $filename <: r".*apps/server/src/database/[^/]+\.tsx?$",
+  not $filename <: r".*/db/prisma/.*\.tsx?$",
+  register_diagnostic(span=$src, message="A Prisma pool (@prisma/adapter-pg) is built only inside apps/server/src/database/ (and by the db workspace's own scripts under db/prisma/). Inject PRISMA, or call openPrisma() from database/prisma-pool.ts in a script — both are the composed client over the one pool.", severity="error")
+}

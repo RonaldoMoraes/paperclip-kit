@@ -1,0 +1,57 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "db-prisma",
+  "title": "Database (Prisma)",
+  "summary": "Postgres through Prisma 7: the `db` workspace (multi-file schema, migrations, seed, generated client), one pool per process behind the `PRISMA` token, the single import seam, an optional scope extension (soft delete, tenant), `openPrisma()` for scripts",
+  "requires": [],
+  "surfaces": [],
+  "server": {
+    "modules": [{ "import": "./database/database.module", "symbol": "DatabaseModule" }]
+  },
+  "packages": {
+    "root": {
+      "workspaces": ["db"],
+      "dependencies": {
+        "@prisma/adapter-pg": "@versions",
+        "@prisma/client": "@versions",
+        "pg": "@versions"
+      },
+      "devDependencies": {
+        "@types/pg": "@versions"
+      },
+      "scripts": {
+        "db:generate": "yarn --cwd db db:generate",
+        "db:migrate": "yarn --cwd db db:migrate",
+        "db:migrate:deploy": "yarn --cwd db db:migrate:deploy",
+        "db:seed": "yarn --cwd db db:seed",
+        "db:studio": "yarn --cwd db db:studio",
+        "db:reset": "yarn --cwd db db:reset",
+        "typecheck:db": "tsc --noEmit -p db/tsconfig.json"
+      }
+    }
+  },
+  "biome": {
+    "plugins": ["./biome/prisma-pool-boundary.grit", "./biome/db-seam.grit"]
+  },
+  "canaries": [
+    {
+      "plugin": "biome/prisma-pool-boundary.grit",
+      "fixture": "prisma-pool-boundary.fixture.ts",
+      "dest": "apps/server/src/__lint-canary__.prisma-pool-boundary.ts",
+      "expect": [{ "needle": "A Prisma pool", "min": 1 }]
+    },
+    {
+      "plugin": "biome/db-seam.grit",
+      "fixture": "db-seam.fixture.ts",
+      "dest": "apps/server/src/example/__lint-canary__.db-seam.ts",
+      "expect": [{ "needle": "database seam", "min": 1 }]
+    }
+  ],
+  "docs": "docs/db-prisma.md",
+  "postScaffold": [
+    "docker compose -f docker-compose.db.yml up -d  (Postgres 16 on 5432 — or point DATABASE_URL in .env at a database you already have)",
+    "yarn db:generate  (the generated client is gitignored; typecheck and the server specs read it)",
+    "yarn db:migrate --name init  (`prisma migrate dev` — needs a terminal; CI and deploys run `yarn db:migrate:deploy`)",
+    "yarn db:seed  (the three example rows; idempotent)"
+  ]
+}

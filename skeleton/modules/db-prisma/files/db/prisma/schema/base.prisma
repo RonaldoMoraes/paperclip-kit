@@ -1,0 +1,41 @@
+// The base schema. Every `*.prisma` in this directory is part of one schema (Prisma's
+// multi-file schema; `db/prisma.config.ts` points at the directory): a module drops
+// `<module>.prisma` beside this file with its own models and never edits it. The generator
+// and the datasource are declared once, here.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../../generated/prisma"
+  // Explicit rather than inferred from a tsconfig: the client is compiled into the CommonJS
+  // server bundle by webpack and run as ESM by the seed under tsx, and extension-less
+  // relative imports are what both resolve.
+  moduleFormat        = "esm"
+  importFileExtension = ""
+}
+
+// No `url` here: Prisma 7 reads it from `db/prisma.config.ts` (DATABASE_URL).
+datasource db {
+  provider = "postgresql"
+}
+
+/// The example feature's one record — column for column the contract's `Item`
+/// (`shared/contracts/example/item.ts`): `slug` is the wire `id`, `updatedAt` the wire
+/// timestamp. `/feature` renames it along with the rest of the feature.
+model ExampleItem {
+  id        Int      @id @default(autoincrement())
+  /// the contract's `id` — a slug, unique so the API reads a row by it
+  slug      String   @unique @db.VarChar(64)
+  title     String   @db.VarChar(120)
+  note      String   @default("") @db.VarChar(500)
+  done      Boolean  @default(false)
+  /// Attributes with no column of their own. `@db.JsonB`, never plain `Json`: only jsonb is
+  /// indexable and queryable (`path`, `string_contains`); a `json` column stores the text
+  /// and can only be read back whole.
+  meta      Json     @default("{}") @db.JsonB
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  /// written by the service's clock on every change (`setItemDone`), not by the database,
+  /// so every store agrees whose clock the timestamp came from
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("example_item")
+}

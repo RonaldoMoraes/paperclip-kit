@@ -1,0 +1,14 @@
+{
+  "name": "__PRODUCT_NAME__",
+  "short_name": "__PRODUCT_NAME__",
+  "description": "__PRODUCT_NAME__",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F9FAFB",
+  "theme_color": "#F9FAFB",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

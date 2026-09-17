@@ -1,0 +1,42 @@
+{
+  "cli": {
+    "version": ">=18.5.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "distribution": "internal",
+      "channel": "development",
+      "environment": "development",
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "environment": "preview",
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "channel": "production",
+      "environment": "production",
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "completed"
+      }
+    }
+  }
+}

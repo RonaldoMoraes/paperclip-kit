@@ -1,0 +1,22 @@
+// The database package (@__SCOPE__/db) is imported by exactly one file:
+// apps/server/src/database/prisma.ts, the seam, which re-exports the generated client.
+// Everything else imports the seam. An import of the package anywhere else typechecks and
+// works, and quietly couples that file to where the client happens to be generated — when
+// the workspace moves or the output path changes, the seam is the one line to edit.
+// Shared code and the client apps have no business with the database at all: a contract
+// is zod over the wire shape, never a Prisma type.
+//
+// JsModuleSource is the source-string node of every static import and re-export;
+// snippet forms (`import $x from $src`) silently match only single-specifier
+// clauses in Biome's GritQL, so a multi-name import walks through them.
+language js
+
+or {
+  JsModuleSource() as $src,
+  `require($src)`,
+  `import($src)`
+} where {
+  $src <: r"^[\"'`]@__SCOPE__/db(?:[\"'`]$|/.*)",
+  not $filename <: r".*apps/server/src/database/prisma\.ts$",
+  register_diagnostic(span=$src, message="Only the database seam (apps/server/src/database/prisma.ts) imports @__SCOPE__/db. Import the seam — `from \"../database/prisma\"` — for the client and its types; shared code and the client apps never touch the database package.", severity="error")
+}

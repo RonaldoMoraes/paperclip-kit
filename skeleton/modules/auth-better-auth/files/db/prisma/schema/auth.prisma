@@ -1,0 +1,72 @@
+// Better Auth's four tables, as `apps/server/src/auth/better-auth.ts` maps them: snake_case
+// columns declared through `fields`, `Int` ids the database hands out (`generateId: "serial"`
+// — Better Auth reads and writes them as strings; `userIdOf` is the seam back to a number),
+// and the relations `experimental.joins` reads a session and its user through in one query.
+// Model names are the table names on purpose: Better Auth's `modelName` is the Prisma client
+// property, and one spelling for both is one fewer thing to keep in step.
+
+/// One person. Better Auth owns `name`, `email`, `email_verified`, `image` and the two
+/// timestamps; a product column of its own goes here as an `additionalFields` entry in
+/// `better-auth.ts` with `input: false` (no client may set it) and a migration.
+model user {
+  id             Int            @id @default(autoincrement())
+  name           String         @default("") @db.VarChar(255)
+  email          String         @unique @db.VarChar(256)
+  email_verified Boolean        @default(false)
+  image          String?        @db.VarChar(2048)
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime       @updatedAt @db.Timestamptz(6)
+  auth_sessions  auth_session[]
+  accounts       account[]
+}
+
+/// A signed-in device. `token` is what the cookie carries; a delete here is a sign-out.
+model auth_session {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  token      String   @unique @db.VarChar(255)
+  expires_at DateTime @db.Timestamptz(6)
+  ip_address String?  @db.VarChar(64)
+  user_agent String?  @db.VarChar(1024)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+/// One way a person proved who they are: the email-code door (`provider_id = "email-otp"`
+/// is not stored — the OTP plugin writes no account row) or a social provider with the
+/// tokens it returned. `password` stays null in this product: there is no password door.
+model account {
+  id                       Int       @id @default(autoincrement())
+  user_id                  Int
+  account_id               String    @db.VarChar(255)
+  provider_id              String    @db.VarChar(100)
+  access_token             String?   @db.VarChar(2048)
+  refresh_token            String?   @db.VarChar(2048)
+  id_token                 String?   @db.VarChar(4096)
+  access_token_expires_at  DateTime? @db.Timestamptz(6)
+  refresh_token_expires_at DateTime? @db.Timestamptz(6)
+  scope                    String?   @db.VarChar(1024)
+  password                 String?   @db.VarChar(255)
+  created_at               DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime  @updatedAt @db.Timestamptz(6)
+  user                     user      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([provider_id, account_id, user_id])
+  @@index([user_id])
+}
+
+/// A pending proof: the sign-in code (hashed, under `sign-in-otp-<email>`), an OAuth state.
+/// Rows expire; Better Auth sweeps them on its own reads.
+model verification {
+  id         Int      @id @default(autoincrement())
+  identifier String   @db.Text
+  value      String   @db.Text
+  expires_at DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([identifier])
+}

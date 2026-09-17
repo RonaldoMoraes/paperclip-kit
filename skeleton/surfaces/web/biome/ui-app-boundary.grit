@@ -1,0 +1,17 @@
+// shared/ui is consumed by both apps; a runtime import from apps/web (the `~/` alias)
+// compiles on web and breaks the moment mobile renders the component. Type-only
+// imports are the tolerated exception until mobile forces those types into
+// shared/contracts. Scoped by biome.json to shared/ui.
+//
+// JsImport + JsModuleSource cover every import clause shape (including bare
+// `import "~/x.css"`); snippet forms (`import $clause from $src`) silently match
+// only single-specifier clauses in Biome's GritQL, so a multi-name import walks
+// through them.
+language js
+
+JsImport() as $stmt where {
+  $stmt <: contains JsModuleSource() as $src,
+  $src <: r"^[\"']~/[\s\S]*[\"']$",
+  $stmt <: not r"^import\s+type\b[\s\S]*$",
+  register_diagnostic(span=$src, message="Runtime import from apps/web in shared/ui. Move the value into shared/ (ui or contracts), or make the import type-only.", severity="error")
+}

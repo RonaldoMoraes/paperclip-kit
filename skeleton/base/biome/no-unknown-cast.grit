@@ -1,0 +1,10 @@
+// `x as unknown as T` is a double cast: it launders a value past the type
+// checker with no runtime check and no record of why. If the shape is genuinely
+// unknown, narrow it (a type guard, a Zod parse); if the types are simply wrong,
+// fix the type. Scoped by biome.json to every source file; a directory of
+// hand-shaped fixture payloads may exempt itself with a `!` path in that override.
+language js
+
+`$expr as unknown as $type` where {
+  register_diagnostic(span=$type, message="Double cast `as unknown as` bypasses the type checker with no runtime check. Narrow the value instead (type guard or Zod parse), or fix the underlying type.", severity="error")
+}

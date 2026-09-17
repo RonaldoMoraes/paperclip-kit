@@ -1,0 +1,15 @@
+# Locators shared across screens (not owned by a single route).
+wordmark:
+  web:
+    locator: testid
+    value: wordmark
+  mobile:
+    locator: testid
+    value: wordmark
+
+# `app/RouteError.tsx` — every route's error surface, and its one control.
+route_error_retry:
+  web:
+    locator: testid
+    value: route-error-retry
+  mobile: none

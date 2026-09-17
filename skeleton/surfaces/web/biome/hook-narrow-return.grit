@@ -1,0 +1,15 @@
+// A feature hook returns only what the view reads. Handing back the whole useQuery /
+// useMutation result leaks every flag and function into the screen, and its spec then
+// has to mock all of them. Scoped by biome.json to hooks/ directories.
+language js
+
+or {
+  `return $call` as $r where { $call <: r"^use(?:Query|Mutation|SuspenseQuery|InfiniteQuery)\([\s\S]*\)$" },
+  `const $name = $call` as $r where {
+    $name <: r"^[A-Za-z_$][\w$]*$",
+    $call <: r"^use(?:Query|Mutation|SuspenseQuery|InfiniteQuery)\([\s\S]*\)$"
+  },
+  `return $obj` as $r where { $obj <: r"^\{[\s\S]*\b(?:mutate|mutateAsync|refetch)\s*[,}][\s\S]*$" }
+} where {
+  register_diagnostic(span=$r, message="Return only what the view reads: destructure the query/mutation result and expose data, flags and a void function — never the whole object, never `mutate`/`mutateAsync`/`refetch` themselves.", severity="error")
+}

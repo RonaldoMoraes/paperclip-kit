@@ -1,0 +1,64 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "telemetry",
+  "title": "Telemetry",
+  "summary": "a request id on every request, structured JSON logs through one logger, one OpenTelemetry span per request (console in dev, OTLP by env)",
+  "requires": [],
+  "surfaces": [],
+  "server": {
+    "modules": [
+      {
+        "import": "./telemetry/telemetry.module",
+        "symbol": "TelemetryModule"
+      }
+    ]
+  },
+  "packages": {
+    "root": {
+      "dependencies": {
+        "@opentelemetry/api": "@versions",
+        "@opentelemetry/exporter-trace-otlp-http": "@versions",
+        "@opentelemetry/sdk-node": "@versions"
+      },
+      "scripts": {
+        "build:otel-preload": "tsc apps/server/src/telemetry/preload.ts --rootDir apps/server/src --outDir apps/server/dist --module commonjs --moduleResolution node10 --target es2022 --strict --esModuleInterop --skipLibCheck --types node"
+      }
+    }
+  },
+  "biome": {
+    "overrides": [
+      {
+        "includes": [
+          "apps/server/src/**",
+          "!apps/server/src/telemetry/**",
+          "!apps/server/src/common/ports/**",
+          "!apps/server/src/**/console.adapter.ts",
+          "!apps/server/src/**/*.repl.ts",
+          "!apps/server/src/main.ts",
+          "!**/*.spec.ts"
+        ],
+        "plugins": [
+          "./biome/no-console-in-domain.grit"
+        ]
+      }
+    ]
+  },
+  "canaries": [
+    {
+      "plugin": "biome/no-console-in-domain.grit",
+      "fixture": "no-console-in-domain.fixture.ts",
+      "dest": "apps/server/src/__lint-canary__.no-console-in-domain.ts",
+      "expect": [
+        {
+          "needle": "Log through the logger",
+          "min": 1
+        }
+      ]
+    }
+  ],
+  "docs": "docs/telemetry.md",
+  "postScaffold": [
+    "nothing to fill: with OTEL_EXPORTER_OTLP_ENDPOINT unset and OTEL_CONSOLE unset no span leaves the process; OTEL_CONSOLE=true prints every span in dev, an OTLP/HTTP collector URL ships them",
+    "optional: `yarn build:otel-preload` after `yarn build:server`, then `node -r ./apps/server/dist/telemetry/preload.js apps/server/dist/main.js` starts OpenTelemetry before Nest loads — needed only once a library instrumentation is added (docs/telemetry.md)"
+  ]
+}

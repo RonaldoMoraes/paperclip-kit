@@ -1,0 +1,28 @@
+{
+  "name": "@__SCOPE__/db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "__PRODUCT_NAME__'s database: the Prisma schema, its migrations, the seed and the generated client.",
+  "type": "module",
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "@versions",
+    "@prisma/client": "@versions",
+    "dotenv": "@versions",
+    "pg": "@versions"
+  },
+  "devDependencies": {
+    "@types/node": "@versions",
+    "@types/pg": "@versions",
+    "prisma": "@versions",
+    "tsx": "@versions",
+    "typescript": "@versions"
+  }
+}

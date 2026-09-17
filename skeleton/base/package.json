@@ -1,0 +1,64 @@
+{
+  "name": "__PRODUCT_SLUG__",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "packageManager": "yarn@4.18.0",
+  "workspaces": [],
+  "scripts": {
+    "dev": "concurrently \"yarn dev:server\" \"node scripts/run-if-script.mjs dev:client\"",
+    "dev:server": "nest start --watch",
+    "build": "yarn build:server && node scripts/run-if-script.mjs build:client",
+    "build:server": "nest build",
+    "start": "node apps/server/dist/main.js",
+    "typecheck": "tsc --noEmit -p apps/server/tsconfig.build.json && node scripts/run-if-script.mjs 'typecheck:*'",
+    "lint": "biome check .",
+    "lint:guards": "node scripts/check-lint-guards.mjs",
+    "test": "vitest run && node scripts/run-if-script.mjs test:mobile",
+    "test:contract": "node scripts/check-test-contract.mjs",
+    "wt": "bash ./scripts/wt/wt",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@nestjs/common": "@versions",
+    "@nestjs/core": "@versions",
+    "@nestjs/platform-express": "@versions",
+    "dotenv": "@versions",
+    "express": "@versions",
+    "reflect-metadata": "@versions",
+    "rxjs": "@versions",
+    "zod": "@versions"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "@versions",
+    "@commitlint/cli": "@versions",
+    "@commitlint/config-conventional": "@versions",
+    "@nestjs/cli": "@versions",
+    "@nestjs/schematics": "@versions",
+    "@nestjs/testing": "@versions",
+    "@testing-library/jest-dom": "@versions",
+    "@testing-library/react": "@versions",
+    "@testing-library/user-event": "@versions",
+    "@types/express": "@versions",
+    "@types/node": "@versions",
+    "concurrently": "@versions",
+    "husky": "@versions",
+    "jsdom": "@versions",
+    "msw": "@versions",
+    "ts-loader": "@versions",
+    "tsx": "@versions",
+    "typescript": "@versions",
+    "vitest": "@versions",
+    "webpack-node-externals": "@versions"
+  },
+  "volta": {
+    "node": "22.17.1",
+    "yarn": "4.18.0"
+  },
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "resolutions": {
+    "zod": "^4.0.0"
+  }
+}

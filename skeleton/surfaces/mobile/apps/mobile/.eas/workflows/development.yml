@@ -1,0 +1,85 @@
+# Development delivery.
+#
+# Fingerprints the native project, then per platform: a finished development build with
+# that fingerprint means the change ships as an update to the development channel;
+# otherwise a new binary is built. The iOS build refreshes the ad hoc profile so devices
+# registered since the last build can install it.
+# Refreshing the profile talks to Apple, so the app needs an App Store Connect API key
+# (App Manager role) stored on EAS: `eas credentials -p ios` → App Store Connect API Key.
+#
+# Dispatch-only — no push/PR trigger — so a build is never launched without a deliberate
+# command:
+#   eas workflow:run .eas/workflows/development.yml
+#   eas workflow:run .eas/workflows/development.yml -F force_build=true
+
+name: Development delivery
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_build:
+        type: boolean
+        required: false
+        default: false
+        description: 'Build a new binary even if the native fingerprint is unchanged'
+
+jobs:
+  fingerprint:
+    name: Fingerprint
+    type: fingerprint
+    environment: development
+  get_ios_build:
+    name: Check for a matching iOS build
+    needs: [fingerprint]
+    type: get-build
+    params:
+      platform: ios
+      profile: development
+      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
+      wait_for_in_progress: true
+  get_android_build:
+    name: Check for a matching Android build
+    needs: [fingerprint]
+    type: get-build
+    params:
+      platform: android
+      profile: development
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+      wait_for_in_progress: true
+  publish_ios_update:
+    name: Publish iOS update
+    needs: [get_ios_build]
+    if: ${{ !inputs.force_build && needs.get_ios_build.outputs.build_id }}
+    type: update
+    environment: development
+    params:
+      channel: development
+      platform: ios
+      message: ${{ substring(github.commit_message || 'Manual development update', 0, 1024) }}
+  build_ios:
+    name: Build iOS
+    needs: [get_ios_build]
+    if: ${{ inputs.force_build || !needs.get_ios_build.outputs.build_id }}
+    type: build
+    params:
+      platform: ios
+      profile: development
+      refresh_ad_hoc_provisioning_profile: true
+  publish_android_update:
+    name: Publish Android update
+    needs: [get_android_build]
+    if: ${{ !inputs.force_build && needs.get_android_build.outputs.build_id }}
+    type: update
+    environment: development
+    params:
+      channel: development
+      platform: android
+      message: ${{ substring(github.commit_message || 'Manual development update', 0, 1024) }}
+  build_android:
+    name: Build Android
+    needs: [get_android_build]
+    if: ${{ inputs.force_build || !needs.get_android_build.outputs.build_id }}
+    type: build
+    params:
+      platform: android
+      profile: development

@@ -1,0 +1,87 @@
+# Deploy configuration — provider-neutral shape, consumed by the deploy step your host needs
+# (Cloud Run, Fly, ECS, a VM…). CI builds the image (`.github/workflows/ci.yaml`); the deploy
+# step is a documented slot: read this file for the environment being deployed and translate
+# each block into the provider's flags. Nothing in the repo reads it at runtime.
+#
+#   buildArgs  → `docker build --build-arg KEY=value`, one per key, verbatim — values baked into
+#                the image. Build-time only; never a secret. COMMIT_SHA feeds /api/health.
+#                VITE_ENV is the web bundle's env: Vite inlines VITE_* at `yarn build`, so the
+#                Dockerfile writes this one value to `.env.production` before building — a dotenv
+#                block, one KEY=value per line (a YAML `|` literal keeps the newlines; a shell
+#                passes it as `--build-arg VITE_ENV="$(...)"`). Base needs none: the web talks to
+#                the server that serves it. A module that reads a VITE_* variable (its section of
+#                `.env.example` says which) gets a line per environment, e.g.
+#                    VITE_ENV: |
+#                      VITE_SENTRY_DSN=https://…@sentry.io/1
+#                      VITE_SENTRY_ENVIRONMENT=staging
+#                The Dockerfile declares no other VITE_* ARG and never needs one per module.
+#   envVars    → plain environment variables set on the running container.
+#   secrets    → `name` is the env var the server reads; `secret` is the reference in your
+#                secret manager (`<SECRET_NAME>:<version>`, an ARN, a vault path…). The value
+#                never appears here or in CI logs.
+#   runtime    → sizing and exposure of the running service.
+#
+# Every env var listed under envVars/secrets appears in `.env.example` with the file that reads
+# it; modules add their own entries when they are scaffolded in.
+
+environments:
+  development:
+    buildArgs:
+      COMMIT_SHA: latest
+      VITE_ENV: ""                # the web bundle's VITE_* lines — see the note above; empty = code defaults
+    envVars:
+      NODE_ENV: development
+      PORT: "3000"
+    secrets: []
+      # - name: DATABASE_URL
+      #   secret: MYPRODUCT_DEV_DATABASE_URL:latest
+    runtime:
+      region: us-central1
+      memory: 512Mi
+      cpu: "1"
+      timeoutSeconds: 300
+      concurrency: 80
+      minInstances: 0
+      maxInstances: 3
+      port: 3000
+      public: true               # reachable without provider-level auth
+
+  staging:
+    buildArgs:
+      COMMIT_SHA: latest
+      VITE_ENV: ""
+    envVars:
+      NODE_ENV: staging
+      PORT: "3000"
+    secrets: []
+    runtime:
+      region: us-central1
+      memory: 512Mi
+      cpu: "1"
+      timeoutSeconds: 300
+      concurrency: 80
+      minInstances: 0
+      maxInstances: 3
+      port: 3000
+      public: true
+
+  # A production release is promoted from staging by a person, never deployed straight
+  # from a merge. Keep `minInstances` at 1 or more once traffic is real.
+  production:
+    buildArgs:
+      COMMIT_SHA: latest
+      VITE_ENV: ""
+    envVars:
+      NODE_ENV: production
+      PORT: "3000"
+    secrets: []
+    runtime:
+      region: us-central1
+      memory: 1Gi
+      cpu: "1"
+      timeoutSeconds: 300
+      concurrency: 80
+      minInstances: 1
+      maxInstances: 5
+      port: 3000
+      public: true

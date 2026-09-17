@@ -1,0 +1,10 @@
+/*
+ * The token file is the same one the web app uses, so a colour exists once for both
+ * platforms. NativeWind reads the :root custom properties out of this bundle, which is
+ * why the RGB-channel form (`rgb(var(--x) / <alpha-value>)`) resolves on native too.
+ */
+@import "../../shared/ui/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "notifications",
+  "title": "Notifications",
+  "summary": "the notification port for real: email through SendGrid, SMS through Twilio, push through Expo, behind NOTIFICATION_MODE=fake|real with console adapters, typed templates and one telemetry event per send",
+  "requires": [],
+  "surfaces": [],
+  "server": {
+    "modules": [{ "import": "./notification/notification.module", "symbol": "NotificationModule" }],
+    "ports": {
+      "notification": { "import": "./notification/notification.provider", "symbol": "NotificationProvider" }
+    }
+  },
+  "packages": {
+    "root": {
+      "dependencies": {
+        "@sendgrid/mail": "@versions",
+        "expo-server-sdk": "@versions",
+        "twilio": "@versions"
+      }
+    }
+  },
+  "biome": {
+    "plugins": ["./biome/notification-provider-imports.grit"]
+  },
+  "canaries": [
+    {
+      "plugin": "biome/notification-provider-imports.grit",
+      "fixture": "notification-provider-imports.fixture.ts",
+      "dest": "apps/server/src/__lint-canary__.notification-provider-imports.ts",
+      "expect": [{ "needle": "Notification vendor SDKs", "min": 3 }]
+    }
+  ],
+  "docs": "docs/notifications.md",
+  "postScaffold": [
+    "NOTIFICATION_MODE=fake by default: every send is a console line and nothing leaves the machine. Nothing is sent until you set NOTIFICATION_MODE=real plus SENDGRID_API_KEY, NOTIFICATION_FROM_EMAIL, SMS_ACCOUNT_SID, SMS_AUTH_TOKEN and SMS_FROM in .env (EXPO_ACCESS_TOKEN only if the Expo project enforces one)."
+  ]
+}

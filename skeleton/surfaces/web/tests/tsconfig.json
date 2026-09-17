@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@contracts/*": ["../shared/contracts/*"],
+      "@domain/*": ["../shared/domain/*"],
+      "~/*": ["../apps/web/src/*"]
+    }
+  },
+  "include": [
+    "playwright.config.ts",
+    "config/**/*.ts",
+    "fixtures/**/*.ts",
+    "helpers/**/*.ts",
+    "pages/**/*.ts",
+    "specs/**/*.ts"
+  ],
+  // The mobile surface's Appium lane reads the wdio globals; it compiles through its own
+  // tests/tsconfig.appium.json (`yarn typecheck:tests:appium`), never through this one.
+  "exclude": ["appium", "pages/mobile", "specs/mobile"]
+}

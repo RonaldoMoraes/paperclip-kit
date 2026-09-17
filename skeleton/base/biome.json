@@ -1,0 +1,127 @@
+{
+  "$schema": "https://biomejs.dev/schemas/latest/schema.json",
+  "root": true,
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!.paperclip",
+      "!.wt",
+      "!**/generated",
+      "!**/.tanstack",
+      "!**/dist",
+      "!**/*.gen.ts",
+      "!**/*.gen.tsx",
+      "!tests/.artifacts",
+      "!tests/allure-results",
+      "!tests/playwright-report",
+      "!tests/test-results",
+      "!apps/web/public/mockServiceWorker.js",
+      "!apps/web/src/app/routeTree.gen.ts",
+      "!apps/mobile/.expo",
+      "!apps/mobile/ios",
+      "!apps/mobile/android",
+      "!scripts/lint-canary"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "trailingCommas": "es5"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              [
+                ":URL:",
+                ":NODE:",
+                ":BUN:",
+                ":PACKAGE:",
+                ":PACKAGE_WITH_PROTOCOL:",
+                "!@__SCOPE__",
+                "!@__SCOPE__/**",
+                "!@contracts/**",
+                "!@domain/**",
+                "!@ui/**"
+              ],
+              ["@__SCOPE__", "@__SCOPE__/**"],
+              ["@contracts/**", "@domain/**", "@ui/**", "~/**", ":ALIAS:", ":PATH:"]
+            ],
+            "identifierOrder": "lexicographic"
+          }
+        }
+      }
+    }
+  },
+  "plugins": ["./biome/promise-chains.grit"],
+  "linter": {
+    "rules": {
+      "a11y": "on",
+      "complexity": {
+        "noImportantStyles": "off",
+        "noStaticOnlyClass": "off",
+        "noVoid": "error"
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/**/*.spec.ts", "apps/**/*.spec.tsx", "shared/**/*.spec.ts", "shared/**/*.spec.tsx"],
+      "plugins": ["./biome/spec-guardrails.grit", "./biome/no-flaky-mocks.grit"]
+    },
+    {
+      "includes": ["**"],
+      "plugins": ["./biome/no-unknown-cast.grit"]
+    },
+    {
+      "includes": [
+        "apps/*/src/features/**",
+        "apps/mobile/app/**",
+        "shared/contracts/**",
+        "shared/domain/**",
+        "!**/*.spec.ts",
+        "!**/*.spec.tsx"
+      ],
+      "plugins": ["./biome/error-shape.grit"]
+    },
+    {
+      "includes": ["apps/server/**"],
+      "javascript": {
+        "parser": {
+          "unsafeParameterDecoratorsEnabled": true
+        }
+      },
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useHookAtTopLevel": "off"
+          }
+        }
+      }
+    }
+  ]
+}

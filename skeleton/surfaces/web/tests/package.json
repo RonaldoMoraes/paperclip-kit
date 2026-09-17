@@ -1,0 +1,28 @@
+{
+  "name": "@__SCOPE__/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "test:web": "playwright test",
+    "test:web:contract": "playwright test --project='Web - Contract'",
+    "test:web:smoke": "playwright test --project='Web - Smoke'",
+    "test:web:regression": "playwright test --project='Web - Regression'",
+    "playwright:install": "playwright install chromium",
+    "validate:elements": "node script/validate-elements.mjs",
+    "validate:specs": "node script/validate-specs.mjs",
+    "validate": "yarn validate:elements && yarn validate:specs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "@versions",
+    "@types/node": "@versions",
+    "dotenv": "@versions",
+    "msw": "@versions",
+    "typescript": "@versions",
+    "yaml": "@versions"
+  },
+  "volta": {
+    "extends": "../package.json"
+  }
+}

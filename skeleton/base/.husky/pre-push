@@ -1,0 +1,2 @@
+# Package-scoped: the same two gates CI runs first, so a push that cannot pass never leaves the machine.
+yarn typecheck && yarn test

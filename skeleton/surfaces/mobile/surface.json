@@ -1,0 +1,180 @@
+{
+  "id": "mobile",
+  "title": "Mobile (Expo)",
+  "summary": "apps/mobile — Expo 54, expo-router 6, NativeWind 4: the example feature on two tabs over the shared contracts, domain and copy; mock mode over msw/native; EAS delivery by fingerprint; an Appium lane in the tests workspace; six guards with canaries.",
+  "requires": [
+    "web"
+  ],
+  "packages": {
+    "root": {
+      "workspaces": [
+        "apps/mobile"
+      ],
+      "scripts": {
+        "mobile": "yarn --cwd apps/mobile start",
+        "mobile:mock": "yarn --cwd apps/mobile start:mock",
+        "typecheck:mobile": "yarn --cwd apps/mobile typecheck",
+        "typecheck:tests:appium": "yarn --cwd tests typecheck:appium",
+        "test:mobile": "yarn --cwd apps/mobile test",
+        "test:mobile:smoke": "yarn --cwd tests test:mobile:smoke",
+        "test:mobile:regression": "yarn --cwd tests test:mobile:regression"
+      }
+    },
+    "tests": {
+      "scripts": {
+        "typecheck:appium": "tsc --noEmit -p tsconfig.appium.json",
+        "test:mobile:smoke": "wdio run appium/wdio.conf.ts --suite smoke",
+        "test:mobile:regression": "wdio run appium/wdio.conf.ts --suite regression"
+      },
+      "devDependencies": {
+        "@wdio/cli": "@versions",
+        "@wdio/local-runner": "@versions",
+        "@wdio/mocha-framework": "@versions",
+        "@wdio/spec-reporter": "@versions",
+        "webdriverio": "@versions"
+      }
+    }
+  },
+  "biome": {
+    "plugins": [],
+    "overrides": [
+      {
+        "includes": [
+          "apps/mobile/**"
+        ],
+        "plugins": [
+          "./biome/mobile-ui-imports.grit",
+          "./biome/spring-mass.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/mobile/**/*.spec.ts",
+          "apps/mobile/**/*.spec.tsx"
+        ],
+        "plugins": [
+          "./biome/mock-seam.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/mobile/app/**",
+          "!apps/mobile/app/**/_layout.tsx"
+        ],
+        "plugins": [
+          "./biome/route-no-logic.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/mobile/src/features/**/screens/**",
+          "!**/*.spec.tsx",
+          "!**/*.spec.ts"
+        ],
+        "plugins": [
+          "./biome/screen-chrome.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/mobile/**",
+          "!apps/mobile/app.config.js",
+          "!apps/mobile/index.ts",
+          "!apps/mobile/src/lib/config.ts",
+          "!apps/mobile/src/lib/mock-mode/**"
+        ],
+        "plugins": [
+          "./biome/expo-public-env.grit"
+        ]
+      }
+    ]
+  },
+  "canaries": [
+    {
+      "plugin": "biome/mobile-ui-imports.grit",
+      "fixture": "mobile-ui-imports.fixture.ts",
+      "dest": "apps/mobile/src/__lint-canary__.mobile-ui-imports.ts",
+      "expect": [
+        {
+          "needle": "web-only",
+          "min": 1
+        },
+        {
+          "needle": "web motion tokens",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/spring-mass.grit",
+      "fixture": "spring-mass.fixture.tsx",
+      "dest": "apps/mobile/src/__lint-canary__.spring-mass.tsx",
+      "expect": [
+        {
+          "needle": "names its mass",
+          "min": 2
+        }
+      ]
+    },
+    {
+      "plugin": "biome/mock-seam.grit",
+      "fixture": "mock-seam.fixture.ts",
+      "dest": "apps/mobile/src/__lint-canary__.mock-seam.spec.ts",
+      "expect": [
+        {
+          "needle": "Mocks stop at the transport seam",
+          "min": 2
+        }
+      ]
+    },
+    {
+      "plugin": "biome/route-no-logic.grit",
+      "fixture": "route-no-logic.fixture.tsx",
+      "dest": "apps/mobile/app/__lint-canary__.route-no-logic.tsx",
+      "expect": [
+        {
+          "needle": "holds no state, effect or reducer of its own",
+          "min": 2
+        },
+        {
+          "needle": "no runtime import from @domain/",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/screen-chrome.grit",
+      "fixture": "screen-chrome.fixture.tsx",
+      "dest": "apps/mobile/src/features/__lint-canary__/screens/LintCanary.tsx",
+      "expect": [
+        {
+          "needle": "The status bar belongs to the route group",
+          "min": 1
+        },
+        {
+          "needle": "does not own the navigator",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/expo-public-env.grit",
+      "fixture": "expo-public-env.fixture.ts",
+      "dest": "apps/mobile/src/__lint-canary__.expo-public-env.ts",
+      "expect": [
+        {
+          "needle": "read in src/lib/config.ts, index.ts",
+          "min": 1
+        }
+      ]
+    }
+  ],
+  "docs": "docs/mobile.md",
+  "testContractAllow": [],
+  "postScaffold": [
+    "copy apps/mobile/.env.example to apps/mobile/.env (the development identity works locally as is)",
+    "run `yarn typecheck:mobile` once — it writes apps/mobile/expo-env.d.ts and .expo/types (typed routes), both gitignored",
+    "the Appium lane needs Appium 2 on the machine (`npm i -g appium` + a driver) and APP_PATH — tests/docs/appium.md; with APP_PATH unset every mobile spec skips itself",
+    "before the first EAS build: `eas init` → EAS_PROJECT_ID, then the identity variables on each EAS environment — docs/mobile.md, Delivery"
+  ]
+}

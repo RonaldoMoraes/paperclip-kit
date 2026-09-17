@@ -1,0 +1,39 @@
+// A memoization is a claim about renders, and most of them are unearned. `useMemo` and
+// `useCallback` cost a dependency array that has to stay correct and a reader who has to
+// verify it, and they buy nothing unless something downstream reads the identity they
+// preserve. Two things earn one: a computation expensive enough to feel — not an object
+// literal, a `find` over a dozen items, or a parse of a handful of fields — and
+// referential identity a real dependency consumes, which means an effect's dep list, a
+// memoized child, another hook's dep list, or a hook's returned API whose callers hold it
+// in one of those. A survivor names that dependency in a one-line comment beside it;
+// anything else is deleted and the value computed inline.
+//
+// `useRef` is not matched: it holds identity that outlives the render rather than caching
+// one, so there is nothing for it to earn.
+//
+// Each call shape is spelled out twice, with and without a type argument. GritQL matches
+// a call snippet field by field, so `useMemo($...)` misses `useMemo<Item[]>(…)` — the
+// type argument is a field that snippet does not have — and the annotated form is how a
+// memo that returns a list tends to be written.
+//
+// Warn rather than error, because the justification lives at the consumer and the pattern
+// only sees the call. A survivor carries it as the suppression's reason —
+// `// biome-ignore lint/plugin: <what consumes the identity>` — which is how the rule
+// reads clean with the earned memos still in place.
+//
+// Scoped by biome.json to `apps/web/src` and `shared/ui`, source only: a spec renders
+// hooks rather than writes them. The mobile surface adds its own scope.
+language js
+
+or {
+  `useMemo($...)` as $hook,
+  `useCallback($...)` as $hook,
+  `useMemo<$t>($...)` as $hook,
+  `useCallback<$t>($...)` as $hook,
+  `$_.useMemo($...)` as $hook,
+  `$_.useCallback($...)` as $hook,
+  `$_.useMemo<$t>($...)` as $hook,
+  `$_.useCallback<$t>($...)` as $hook
+} where {
+  register_diagnostic(span=$hook, message="This hook has to earn its place — an expensive computation, or referential identity a real dependency consumes (an effect dep, a memoized child, a hook's returned API). Keep it only with a `// biome-ignore lint/plugin:` comment beside it naming that dependency; otherwise delete it and compute the value inline.", severity="warn")
+}

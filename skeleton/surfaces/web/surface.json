@@ -1,0 +1,263 @@
+{
+  "id": "web",
+  "title": "Web surface",
+  "summary": "apps/web (React 19 + Vite 6 + TanStack Router/Query over shared/ui) and the hermetic Playwright workspace under tests/, with the web lint guards and their canaries.",
+  "biome": {
+    "plugins": [
+      "biome/design-system.grit",
+      "biome/focus-ring.grit"
+    ],
+    "overrides": [
+      {
+        "includes": [
+          "apps/*/src/features/**/screens/**",
+          "apps/*/src/features/**/components/**",
+          "!**/*.spec.tsx",
+          "!**/*.spec.ts"
+        ],
+        "plugins": [
+          "./biome/server-state-boundary.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/*/src/features/**/hooks/**",
+          "!**/*.spec.tsx",
+          "!**/*.spec.ts"
+        ],
+        "plugins": [
+          "./biome/hook-narrow-return.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/web/src/**",
+          "!apps/web/src/data/**"
+        ],
+        "plugins": [
+          "./biome/client-storage.grit"
+        ]
+      },
+      {
+        "includes": [
+          "shared/ui/**"
+        ],
+        "plugins": [
+          "./biome/ui-app-boundary.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/web/**/*.spec.ts",
+          "apps/web/**/*.spec.tsx"
+        ],
+        "plugins": [
+          "./biome/mock-seam.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/web/src/app/routes/**",
+          "!apps/web/src/app/routes/__root.tsx",
+          "!apps/web/src/app/routes/_app.tsx"
+        ],
+        "plugins": [
+          "./biome/route-no-logic.grit"
+        ]
+      },
+      {
+        "includes": [
+          "apps/web/src/**",
+          "shared/ui/**",
+          "!**/*.spec.ts",
+          "!**/*.spec.tsx"
+        ],
+        "plugins": [
+          "./biome/render-stability.grit"
+        ]
+      }
+    ]
+  },
+  "canaries": [
+    {
+      "plugin": "biome/design-system.grit",
+      "fixture": "design-system.fixture.tsx",
+      "dest": "apps/web/src/__lint-canary__.design-system.tsx",
+      "expect": [
+        {
+          "needle": "Arbitrary hex color",
+          "min": 1
+        },
+        {
+          "needle": "Transition the specific properties",
+          "min": 1
+        },
+        {
+          "needle": "Display-sized arbitrary text class",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/focus-ring.grit",
+      "fixture": "focus-ring.fixture.tsx",
+      "dest": "apps/web/src/__lint-canary__.focus-ring.tsx",
+      "expect": [
+        {
+          "needle": "Focus is designed once",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/server-state-boundary.grit",
+      "fixture": "server-state-boundary.fixture.tsx",
+      "dest": "apps/web/src/features/__lint-canary__/screens/LintCanary.tsx",
+      "expect": [
+        {
+          "needle": "never reaches the network",
+          "min": 1
+        },
+        {
+          "needle": "useLoaderData in a screen",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/hook-narrow-return.grit",
+      "fixture": "hook-narrow-return.fixture.ts",
+      "dest": "apps/web/src/features/__lint-canary__/hooks/useLintCanary.ts",
+      "expect": [
+        {
+          "needle": "Return only what the view reads",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/client-storage.grit",
+      "fixture": "client-storage.fixture.ts",
+      "dest": "apps/web/src/__lint-canary__.client-storage.ts",
+      "expect": [
+        {
+          "needle": "Client storage is read and written only under src/data",
+          "min": 1
+        },
+        {
+          "needle": "Cookies belong to the auth client",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/ui-app-boundary.grit",
+      "fixture": "ui-app-boundary.fixture.tsx",
+      "dest": "shared/ui/__lint-canary__.ui-app-boundary.tsx",
+      "expect": [
+        {
+          "needle": "Runtime import from apps/web in shared/ui",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/mock-seam.grit",
+      "fixture": "mock-seam.fixture.ts",
+      "dest": "apps/web/src/__lint-canary__.mock-seam.spec.ts",
+      "expect": [
+        {
+          "needle": "Mocks stop at the transport seam",
+          "min": 2
+        }
+      ]
+    },
+    {
+      "plugin": "biome/route-no-logic.grit",
+      "fixture": "route-no-logic.fixture.tsx",
+      "dest": "apps/web/src/app/routes/__lint-canary__.route-no-logic.tsx",
+      "expect": [
+        {
+          "needle": "holds no state, effect or reducer of its own",
+          "min": 2
+        },
+        {
+          "needle": "no runtime import from @domain/",
+          "min": 1
+        }
+      ]
+    },
+    {
+      "plugin": "biome/render-stability.grit",
+      "fixture": "render-stability.fixture.tsx",
+      "dest": "apps/web/src/__lint-canary__.render-stability.tsx",
+      "expect": [
+        {
+          "needle": "earn its place",
+          "min": 1
+        }
+      ]
+    }
+  ],
+  "packages": {
+    "root": {
+      "workspaces": [
+        "tests"
+      ],
+      "scripts": {
+        "dev:client": "vite --config apps/web/vite.config.ts",
+        "dev:mock": "VITE_API_MODE=mock vite --config apps/web/vite.config.ts",
+        "build:client": "vite build --config apps/web/vite.config.ts",
+        "routes:generate": "yarn --cwd apps/web tsr generate",
+        "typecheck:web": "tsc --noEmit -p apps/web/tsconfig.json",
+        "typecheck:tests": "yarn --cwd tests typecheck",
+        "test:e2e": "yarn --cwd tests test:web",
+        "test:web:contract": "yarn --cwd tests test:web:contract",
+        "test:web:smoke": "yarn --cwd tests test:web:smoke",
+        "test:web:regression": "yarn --cwd tests test:web:regression",
+        "test:e2e:validate": "yarn --cwd tests validate"
+      },
+      "dependencies": {
+        "@tanstack/react-form": "@versions",
+        "@tanstack/react-query": "@versions",
+        "@tanstack/react-router": "@versions",
+        "class-variance-authority": "@versions",
+        "clsx": "@versions",
+        "lucide-react": "@versions",
+        "motion": "@versions",
+        "react": "@versions",
+        "react-dom": "@versions",
+        "tailwind-merge": "@versions",
+        "zod": "@versions"
+      },
+      "devDependencies": {
+        "@tanstack/react-query-devtools": "@versions",
+        "@tanstack/react-router-devtools": "@versions",
+        "@tanstack/router-cli": "@versions",
+        "@tanstack/router-plugin": "@versions",
+        "@testing-library/dom": "@versions",
+        "@testing-library/jest-dom": "@versions",
+        "@testing-library/react": "@versions",
+        "@testing-library/user-event": "@versions",
+        "@types/react": "@versions",
+        "@types/react-dom": "@versions",
+        "@vitejs/plugin-react": "@versions",
+        "autoprefixer": "@versions",
+        "jsdom": "@versions",
+        "msw": "@versions",
+        "postcss": "@versions",
+        "tailwindcss": "@versions",
+        "vite": "@versions"
+      },
+      "msw": {
+        "workerDirectory": [
+          "apps/web/public"
+        ]
+      }
+    }
+  },
+  "postScaffold": [
+    "run `yarn routes:generate` \u2014 apps/web/src/app/routeTree.gen.ts is generated, never shipped",
+    "run `yarn --cwd tests playwright:install` once per machine"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "observability-sentry",
+  "title": "Observability (Sentry)",
+  "summary": "the telemetry port for real: one JSON line per call on the console always, and Sentry beside it once a DSN is set — errors only, PHI-safe (no user info, bodies, cookies, headers, query strings or stack-frame variables) — on the server, the web app and the phone",
+  "requires": [],
+  "surfaces": ["web", "mobile"],
+  "server": {
+    "modules": [{ "import": "./observability/observability.module", "symbol": "ObservabilityModule" }],
+    "ports": {
+      "telemetry": { "import": "./observability/telemetry.provider", "symbol": "TelemetryProvider" }
+    }
+  },
+  "web": {
+    "boot": [{ "import": "~/lib/sentry", "symbol": "bootSentry" }],
+    "providers": [{ "import": "~/app/SentryBoundary", "symbol": "SentryBoundary" }]
+  },
+  "mobile": {
+    "boot": [{ "import": "~/lib/sentry", "symbol": "bootSentry" }]
+  },
+  "packages": {
+    "root": {
+      "dependencies": {
+        "@sentry/nestjs": "@versions",
+        "@sentry/react": "@versions"
+      },
+      "scripts": {
+        "build:sentry-preload": "tsc apps/server/src/observability/preload.ts --rootDir apps/server/src --outDir apps/server/dist --module commonjs --moduleResolution node10 --target es2022 --strict --esModuleInterop --skipLibCheck --types node"
+      }
+    },
+    "mobile": {
+      "dependencies": {
+        "@sentry/react-native": "@versions"
+      }
+    }
+  },
+  "docs": "docs/observability-sentry.md",
+  "postScaffold": [
+    "nothing to fill: with SENTRY_DSN, VITE_SENTRY_DSN and EXPO_PUBLIC_SENTRY_DSN unset no SDK initialises (the web bundle does not even carry it) and every server error is one JSON line on the console; set the DSNs to ship errors — server: SENTRY_DSN in .env; web: VITE_SENTRY_DSN in .env and in the deploy's build args (Vite inlines it); mobile: EXPO_PUBLIC_SENTRY_DSN in apps/mobile/.env and on each EAS environment",
+    "mobile: native crash reporting and source maps need the `@sentry/react-native/expo` config plugin in apps/mobile/app.config.js (a product edit) and a new binary — docs/observability-sentry.md, Mobile",
+    "optional: `yarn build:sentry-preload` after `yarn build:server`, then `node -r ./apps/server/dist/observability/preload.js apps/server/dist/main.js` starts Sentry before Nest loads — needed only with SENTRY_TRACES_SAMPLE_RATE above 0 (docs/observability-sentry.md, Traces)"
+  ]
+}

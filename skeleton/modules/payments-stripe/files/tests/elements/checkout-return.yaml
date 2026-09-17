@@ -1,0 +1,34 @@
+# Checkout return — web only: `apps/web/src/features/subscription/screens/CheckoutReturn.tsx`
+# (/checkout/return). Stripe hands the browser back here with its Checkout Session id.
+
+checkout_return_confirmed:
+  web:
+    locator: testid
+    value: checkout-return-confirmed
+  mobile: none
+
+# The same testid on both outcomes: what the line says is the claim, and the two headings
+# are what tell them apart.
+checkout_return_note:
+  web:
+    locator: testid
+    value: checkout-return-note
+  mobile: none
+
+checkout_return_continue:
+  web:
+    locator: testid
+    value: checkout-return-continue
+  mobile: none
+
+checkout_return_unconfirmed:
+  web:
+    locator: testid
+    value: checkout-return-unconfirmed
+  mobile: none
+
+checkout_return_retry:
+  web:
+    locator: testid
+    value: checkout-return-retry
+  mobile: none

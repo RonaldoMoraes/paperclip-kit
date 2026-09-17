@@ -1,0 +1,132 @@
+# The example feature: `apps/web/src/features/example/screens/ExampleList.tsx` (/example)
+# and `ExampleDetail.tsx` (/example/<id>). Rows carry dynamic testids
+# (`example-list-row-<id>`); the page object builds those from the same prefix, so only the
+# static spine lives here.
+
+example_list_title:
+  web:
+    locator: testid
+    value: example-list-title
+  mobile:
+    locator: testid
+    value: example-list-title
+
+example_list_filter_all:
+  web:
+    locator: testid
+    value: example-list-filter-all
+  mobile:
+    locator: testid
+    value: example-list-filter-all
+
+example_list_filter_open:
+  web:
+    locator: testid
+    value: example-list-filter-open
+  mobile:
+    locator: testid
+    value: example-list-filter-open
+
+example_list_filter_done:
+  web:
+    locator: testid
+    value: example-list-filter-done
+  mobile:
+    locator: testid
+    value: example-list-filter-done
+
+example_list_count_all:
+  web:
+    locator: testid
+    value: example-list-count-all
+  mobile:
+    locator: testid
+    value: example-list-count-all
+
+example_list_count_open:
+  web:
+    locator: testid
+    value: example-list-count-open
+  mobile:
+    locator: testid
+    value: example-list-count-open
+
+example_list_count_done:
+  web:
+    locator: testid
+    value: example-list-count-done
+  mobile:
+    locator: testid
+    value: example-list-count-done
+
+example_list_list:
+  web:
+    locator: testid
+    value: example-list-list
+  mobile:
+    locator: testid
+    value: example-list-list
+
+example_list_empty:
+  web:
+    locator: testid
+    value: example-list-empty
+  mobile:
+    locator: testid
+    value: example-list-empty
+
+example_list_empty_cta:
+  web:
+    locator: testid
+    value: example-list-empty-cta
+  mobile:
+    locator: testid
+    value: example-list-empty-cta
+
+example_detail_back:
+  web:
+    locator: testid
+    value: example-detail-back
+  mobile:
+    locator: testid
+    value: example-detail-back
+
+example_detail_title:
+  web:
+    locator: testid
+    value: example-detail-title
+  mobile:
+    locator: testid
+    value: example-detail-title
+
+example_detail_note:
+  web:
+    locator: testid
+    value: example-detail-note
+  mobile:
+    locator: testid
+    value: example-detail-note
+
+example_detail_status:
+  web:
+    locator: testid
+    value: example-detail-status
+  mobile:
+    locator: testid
+    value: example-detail-status
+
+example_detail_toggle:
+  web:
+    locator: testid
+    value: example-detail-toggle
+  mobile:
+    locator: testid
+    value: example-detail-toggle
+
+example_detail_error:
+  web:
+    locator: testid
+    value: example-detail-error
+  mobile:
+    locator: testid
+    value: example-detail-error

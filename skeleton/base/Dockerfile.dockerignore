@@ -1,0 +1,32 @@
+# BuildKit per-Dockerfile ignore: buildx reads <Dockerfile-name>.dockerignore next to
+# the Dockerfile. Allowlist first — only what the server image needs is ever sent.
+*
+!package.json
+!yarn.lock
+!.yarnrc.yml
+!.yarn/patches
+!tsconfig.json
+!tsconfig.*.json
+!nest-cli.json
+!webpack.config.js
+!apps
+!shared
+!db
+!scripts
+!tests/package.json
+
+# Heavy trees the server image never builds; their manifests stay so yarn sees every workspace.
+apps/mobile/**
+!apps/mobile/package.json
+
+# Inside the allowed trees: no installs, no build output, no env files, no test artifacts.
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+**/*.tsbuildinfo
+db/generated
+tests/.artifacts
+tests/allure-results
+tests/playwright-report
+tests/test-results

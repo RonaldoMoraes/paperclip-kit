@@ -1,0 +1,16 @@
+// Client persistence has one home: apps/web/src/data. A stray localStorage read works,
+// ships, and then its key is never versioned, never migrated, and never audited for what it
+// holds. Scoped by biome.json to apps/web/src outside src/data.
+// Anchored regex on the node's own source, same shape as design-system.grit.
+language js
+
+or {
+  $s where {
+    $s <: r"^(?:localStorage|sessionStorage)$",
+    register_diagnostic(span=$s, message="Client storage is read and written only under src/data — the store owns shape, versioning and what is allowed to persist on this device. Route this through the store (or an accessor module in src/data).", severity="error")
+  },
+  $s where {
+    $s <: r"^document\.cookie$",
+    register_diagnostic(span=$s, message="Cookies belong to the auth client (a module's seam); nothing else reads or writes document.cookie.", severity="error")
+  }
+}

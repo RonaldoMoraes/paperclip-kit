@@ -1,0 +1,43 @@
+# Settings — `apps/web/src/features/settings/screens/Settings.tsx` (/settings). The rows are
+# the modules' (`settings-action-<id>`); the page object builds those from the prefix.
+
+settings_title:
+  web:
+    locator: testid
+    value: settings-title
+  mobile:
+    locator: testid
+    value: settings-title
+
+settings_version:
+  web:
+    locator: testid
+    value: settings-version
+  mobile:
+    locator: testid
+    value: settings-version
+
+settings_actions:
+  web:
+    locator: testid
+    value: settings-actions
+  mobile:
+    locator: testid
+    value: settings-actions
+
+# The line that stands where the rows would, while no module contributes one.
+settings_no_actions:
+  web:
+    locator: testid
+    value: settings-no-actions
+  mobile:
+    locator: testid
+    value: settings-no-actions
+
+# Every module row at once — for counting, never for tapping one. Scoped to the card, so
+# the failure line that stands under it (`settings-action-error`) is not counted as a row.
+settings_action_rows:
+  web:
+    locator: css
+    value: '[data-testid="settings-actions"] [data-testid^="settings-action-"]'
+  mobile: none

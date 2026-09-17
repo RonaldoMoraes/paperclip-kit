@@ -1,0 +1,21 @@
+// Mocks stop at the transport seam. A spec that mocks `~/features/*` or `@domain/*`
+// replaces the code under test with a stub: the wiring between route, hook and screen is
+// what the spec claims to drive and is exactly what the mock removes, and the stub then
+// drifts from the module it stands for with nothing to catch it. The seam is what this app
+// does not own — `~/lib/auth`, `~/lib/http`, `~/lib/config`, `~/lib/analytics`, the
+// router, a native module, the timers — and everything inside it runs.
+//
+// A screen that needs an action takes it as a prop, so its spec hands it a `vi.fn()` and
+// the hook's own spec drives the hook over a mocked `~/lib/http`.
+//
+// Scoped by biome.json to `apps/web/**/*.spec.ts(x)`; the mobile surface scopes it to its
+// own specs.
+language js
+
+or {
+  `vi.mock($src, $...)` as $m,
+  `vi.doMock($src, $...)` as $m
+} where {
+  $src <: r"^[\"'`](?:~/features/|@domain/).*$",
+  register_diagnostic(span=$m, message="Mocks stop at the transport seam: a spec never mocks ~/features/* or @domain/*, which is the code it exists to drive. Mock ~/lib/auth, ~/lib/http, ~/lib/config, ~/lib/analytics, the router, a native module or the timers, and let the feature run.", severity="error")
+}

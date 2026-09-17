@@ -1,0 +1,75 @@
+/*
+ * Design tokens for __PRODUCT_NAME__.
+ * Values as space-separated RGB channels, consumed by Tailwind via rgb(var(--x) / <alpha-value>).
+ * This file is the ONLY place a color may be defined. No hex anywhere else.
+ *
+ * PLACEHOLDER PALETTE — neutral greys and one accent, written to be replaced. Change the
+ * primitives to the brand's colours and keep the semantic layer's names: every class in
+ * the apps reads a semantic token (canvas, surface, ink, brand, line…), never a primitive.
+ */
+
+:root {
+  /* ── primitives (never flip with the scheme) ───────────────── */
+  --white: 255 255 255;
+  --black: 0 0 0;
+  --gray-050: 249 250 251;
+  --gray-100: 243 244 246;
+  --gray-200: 229 231 235;
+  --gray-300: 209 213 219;
+  --gray-500: 107 114 128;
+  --gray-600: 75 85 99;
+  --gray-800: 31 41 55;
+  --gray-900: 17 24 39;
+  --gray-950: 9 12 20;
+  --accent-100: 219 234 254;
+  --accent-500: 59 130 246;
+  --accent-700: 29 78 216;
+  --accent-900: 30 58 138;
+  --amber-500: 245 158 11;
+  --red-500: 220 38 38;
+  --green-700: 21 128 61;
+
+  /* ── semantic (light) ─────────────────────────────────────── */
+  --bg-canvas: var(--gray-050);
+  --bg-surface: var(--white);
+  --bg-surface-subtle: var(--gray-100);
+  --bg-brand: var(--accent-700);
+  --bg-brand-strong: var(--gray-900);
+  --bg-immersive: var(--accent-900);
+  --fg-primary: var(--gray-900);
+  --fg-secondary: var(--gray-600);
+  --fg-tertiary: var(--gray-500);
+  --fg-on-dark: var(--white);
+  --fg-on-dark-muted: 191 200 214;
+  --fg-brand: var(--accent-700);
+  --fg-accent-on-dark: var(--amber-500);
+  --border-subtle: var(--gray-100);
+  --border-default: var(--gray-200);
+  --feedback-error: var(--red-500);
+  --feedback-success: var(--green-700);
+  --focus-ring: var(--accent-500);
+}
+
+/*
+ * ── dark ─────────────────────────────────────────────────────────────────
+ * Only the SEMANTIC layer flips. Surfaces go near-black and neutral, the accent stays an
+ * accent, and exactly one surface stays coloured: `--bg-brand-strong`, the emphasis card.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-canvas: var(--gray-950);
+    --bg-surface: var(--gray-900);
+    --bg-surface-subtle: var(--gray-800);
+    --bg-brand: var(--accent-700);
+    --bg-brand-strong: var(--accent-900);
+    --bg-immersive: var(--gray-950);
+    --fg-primary: 242 244 247;
+    --fg-secondary: 163 171 184;
+    --fg-tertiary: 120 129 143;
+    --fg-brand: var(--accent-500);
+    --border-subtle: var(--gray-800);
+    --border-default: 55 65 81;
+    --feedback-error: 248 113 113;
+    --focus-ring: var(--accent-500);
+  }
+}

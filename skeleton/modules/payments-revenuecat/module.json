@@ -1,0 +1,46 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "payments-revenuecat",
+  "title": "Payments (RevenueCat)",
+  "summary": "subscriptions sold on the phone by Apple and Google through RevenueCat, settled onto the same entitlement the Stripe module already computes: a store seam the paywall renders against (mock store in mock mode, the SDK lazily loaded otherwise), a header-authed webhook that always answers 200, and a confirm endpoint where the server reads RevenueCat rather than trusting the device",
+  "requires": ["payments-stripe", "mobile"],
+  "surfaces": ["mobile"],
+  "server": {
+    "modules": [{ "import": "./subscription/revenuecat/revenuecat.module", "symbol": "RevenueCatModule" }]
+  },
+  "contracts": {
+    "handlers": [{ "import": "./subscription/store", "symbol": "handlers" }]
+  },
+  "mobile": {
+    "providers": [{ "import": "~/features/subscription/StoreIdentityProvider", "symbol": "StoreIdentityProvider" }],
+    "gates": [{ "import": "~/features/subscription/hooks/useAccessGate", "symbol": "useAccessGate" }],
+    "settingsActions": [{ "import": "~/features/subscription/settingsActions", "symbol": "settingsActions" }]
+  },
+  "packages": {
+    "mobile": {
+      "dependencies": {
+        "react-native-purchases": "@versions"
+      }
+    }
+  },
+  "biome": {
+    "plugins": ["./biome/revenuecat-sdk-imports.grit"]
+  },
+  "canaries": [
+    {
+      "plugin": "biome/revenuecat-sdk-imports.grit",
+      "fixture": "revenuecat-sdk-imports.fixture.ts",
+      "dest": "apps/mobile/src/__lint-canary__.revenuecat-sdk-imports.ts",
+      "expect": [{ "needle": "react-native-purchases", "min": 2 }]
+    }
+  ],
+  "docs": "docs/payments-revenuecat.md",
+  "postScaffold": [
+    "store billing is OFF until REVENUECAT_SECRET_KEY is set: the webhook answers 503, `POST /api/subscription/revenuecat/confirm` answers 503, and the phone's paywall runs against the mock store — `yarn dev`, `yarn mobile:mock` and every gate run that way on purpose",
+    "to turn the server on, set REVENUECAT_SECRET_KEY (a v2 `sk_…` secret key), REVENUECAT_PROJECT_ID and REVENUECAT_WEBHOOK_SECRET in .env (the boot fails naming whichever is missing); REVENUECAT_WEBHOOK_SECRET is the exact `Authorization` header value you type into the dashboard's webhook integration, and the route compares it in constant time",
+    "to turn the phone on, set EXPO_PUBLIC_REVENUECAT_IOS_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_KEY in apps/mobile/.env and on each EAS environment; a key starting with `test_` is RevenueCat's Test Store — the sheet opens and no money moves, which is what a simulator run wants — and the server refuses a `test_` secret key when NODE_ENV=production",
+    "react-native-purchases is a native module: Expo Go and any dev client built before this module was added have no `RNPurchases` to link. Rebuild the dev client (`yarn --cwd apps/mobile ios` / `android`, or the EAS development profile) before a real-mode paywall; mock mode never loads the SDK and needs no new binary",
+    "add \"./plugins/withReactNativeAndroidRoot.cjs\" to the `plugins` array in apps/mobile/app.config.js — a module cannot edit that file, and without it the Android build fails evaluating :react-native-purchases in a workspace whose react-native is hoisted to the repo root",
+    "the mobile gate puts the whole signed-in app behind the paywall. A product with a free tier moves `useAccessGate` off `mobile.gates` and calls it from the routes that are paid for — docs/payments-revenuecat.md, The gate"
+  ]
+}

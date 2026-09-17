@@ -1,0 +1,44 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      // `*.native` first for the same reason vitest orders its extensions that way:
+      // TypeScript has no platform-extension resolution, so the split is spelled out.
+      "@ui/*": ["../../shared/ui/*.native", "../../shared/ui/*"],
+      "@contracts/*": ["../../shared/contracts/*"],
+      // No `.native` split: the domain is pure data and functions, no UI.
+      "@domain/*": ["../../shared/domain/*"],
+      // `~` is the app's own code, `@test` its spec helpers, `@assets` its bundled media.
+      // `vitest.config.ts` repeats all three as aliases; vitest does not read this file.
+      "~/*": ["src/*"],
+      "@test/*": ["test/*"],
+      "@assets/*": ["assets/*"]
+    }
+  },
+  "include": [
+    "index.ts",
+    "nativewind-env.d.ts",
+    "media-env.d.ts",
+    // Written from `experiments.typedRoutes` and gitignored; `.expo/types/router.d.ts`
+    // is the route-literal union every `href` is checked against. Without them `Href`
+    // widens to `string` and a bad path typechecks, so the `typecheck` script runs
+    // `expo customize tsconfig.json` to regenerate both before `tsc`.
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    "test/**/*.d.ts",
+    "test/**/*.tsx",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

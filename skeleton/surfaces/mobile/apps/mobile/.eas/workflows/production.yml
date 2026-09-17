@@ -1,0 +1,98 @@
+# Production delivery.
+#
+# Fingerprints the native project, then per platform: a finished production build with
+# that fingerprint means the change ships as an update to the production channel;
+# otherwise a new binary is built and handed to the store — TestFlight on iOS, the Play
+# internal track on Android. Only a fresh binary is submitted; an update never needs
+# store review.
+#
+# Dispatch-only — no push/PR trigger — so a build is never launched without a deliberate
+# command:
+#   eas workflow:run .eas/workflows/production.yml
+#   eas workflow:run .eas/workflows/production.yml -F force_build=true
+
+name: Production delivery
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_build:
+        type: boolean
+        required: false
+        default: false
+        description: 'Build a new binary even if the native fingerprint is unchanged'
+
+jobs:
+  fingerprint:
+    name: Fingerprint
+    type: fingerprint
+    environment: production
+  get_ios_build:
+    name: Check for a matching iOS build
+    needs: [fingerprint]
+    type: get-build
+    params:
+      platform: ios
+      profile: production
+      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
+      wait_for_in_progress: true
+  get_android_build:
+    name: Check for a matching Android build
+    needs: [fingerprint]
+    type: get-build
+    params:
+      platform: android
+      profile: production
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+      wait_for_in_progress: true
+  publish_ios_update:
+    name: Publish iOS update
+    needs: [get_ios_build]
+    if: ${{ !inputs.force_build && needs.get_ios_build.outputs.build_id }}
+    type: update
+    environment: production
+    params:
+      channel: production
+      platform: ios
+      message: ${{ substring(github.commit_message || 'Manual production update', 0, 1024) }}
+  build_ios:
+    name: Build iOS
+    needs: [get_ios_build]
+    if: ${{ inputs.force_build || !needs.get_ios_build.outputs.build_id }}
+    type: build
+    params:
+      platform: ios
+      profile: production
+  testflight_ios:
+    name: Upload to TestFlight
+    needs: [build_ios]
+    type: testflight
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
+      changelog: ${{ substring(github.commit_message || 'Manual production build', 0, 1024) }}
+  publish_android_update:
+    name: Publish Android update
+    needs: [get_android_build]
+    if: ${{ !inputs.force_build && needs.get_android_build.outputs.build_id }}
+    type: update
+    environment: production
+    params:
+      channel: production
+      platform: android
+      message: ${{ substring(github.commit_message || 'Manual production update', 0, 1024) }}
+  build_android:
+    name: Build Android
+    needs: [get_android_build]
+    if: ${{ inputs.force_build || !needs.get_android_build.outputs.build_id }}
+    type: build
+    params:
+      platform: android
+      profile: production
+  submit_android:
+    name: Submit to Play internal track
+    needs: [build_android]
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production

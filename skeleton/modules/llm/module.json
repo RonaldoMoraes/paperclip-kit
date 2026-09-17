@@ -1,0 +1,52 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "llm",
+  "title": "LLM",
+  "summary": "one LlmClient/AgentRunner port over a registry of services with failover chains; retries, structured-output repair, streaming and telemetry live once; openai/anthropic/google/xai adapters plus a deterministic fake for offline tests",
+  "requires": [],
+  "surfaces": [],
+  "server": {
+    "modules": [{ "import": "./llm/llm.module", "symbol": "LlmModule" }]
+  },
+  "packages": {
+    "root": {
+      "dependencies": {
+        "@ai-sdk/xai": "@versions",
+        "@anthropic-ai/sdk": "@versions",
+        "@google/genai": "@versions",
+        "@openai/agents": "@versions",
+        "ai": "@versions",
+        "openai": "@versions"
+      },
+      "scripts": {
+        "example:repl": "tsx --tsconfig apps/server/tsconfig.json apps/server/src/example/example.repl.ts"
+      }
+    }
+  },
+  "biome": {
+    "plugins": ["./biome/llm-provider-imports.grit", "./biome/openai-agents-imports.grit"]
+  },
+  "canaries": [
+    {
+      "plugin": "biome/llm-provider-imports.grit",
+      "fixture": "llm-provider-imports.fixture.ts",
+      "dest": "apps/server/src/__lint-canary__.llm-provider-imports.ts",
+      "expect": [{ "needle": "Vendor LLM SDKs", "min": 2 }]
+    },
+    {
+      "plugin": "biome/openai-agents-imports.grit",
+      "fixture": "openai-agents-imports.fixture.ts",
+      "dest": "apps/server/src/llm/providers/__lint-canary__.openai-agents-imports.ts",
+      "expect": [{ "needle": "The OpenAI Agents SDK", "min": 2 }]
+    }
+  ],
+  "testContractAllow": [
+    {
+      "path": "apps/server/src/llm/providers/openai-agents.service.ts",
+      "rule": "unit",
+      "reason": "Covered by apps/server/src/llm/agents/agent-runtime-conformance.spec.ts, which runs the AgentRunner port's behavioral claims against this adapter and the native runner — a sibling spec would restate half of that suite."
+    }
+  ],
+  "docs": "docs/llm.md",
+  "postScaffold": ["LLM_MODE=fake needs no keys; set one provider key and LLM_MODE=real to go live"]
+}

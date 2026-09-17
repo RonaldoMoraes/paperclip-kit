@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../docs/module.schema.json",
+  "id": "copy-diff",
+  "title": "Copy diff",
+  "summary": "the source-of-truth diff gate: `yarn copy:diff` holds `@domain/copy` byte-equal to a reference copy module, behind a reasoned allowlist",
+  "requires": [],
+  "surfaces": [],
+  "packages": {
+    "root": {
+      "devDependencies": { "tsx": "@versions" },
+      "scripts": {
+        "copy:diff": "tsx scripts/copy-diff.ts",
+        "typecheck:copy-diff": "tsc --noEmit -p scripts/copy-diff.tsconfig.json"
+      }
+    }
+  },
+  "docs": "docs/copy-diff.md",
+  "postScaffold": [
+    "set COPY_DIFF_PATH (and optionally COPY_DIFF_REF) in .env to the reference copy module; until then `copy:diff` reports 'no reference configured' and exits 0",
+    "add the `copy:diff` step to .github/workflows/ci.yaml after `Unit tests` (base CI is untouched) — the step is in docs/copy-diff.md"
+  ]
+}

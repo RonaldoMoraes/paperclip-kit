@@ -1,0 +1,15 @@
+// Server code logs through the logger, never the console: one JSON line per event with a
+// level, a timestamp, the request id and redacted fields, on one stream a log shipper can
+// parse. A `console.log` beside it is a line with none of that — unparseable, unleveled,
+// unattributed to a request — and the first one invites the next. Scoped by biome.json to
+// apps/server/src outside telemetry/ (the logger's own home), common/ports/ and any
+// `console.adapter.ts` (the console defaults are console by contract), any `*.repl.ts`
+// (a terminal program's UI is the console), main.ts (the boundary that reports a failed
+// boot before any logger exists) and specs. Warn: the fix is usually one line, but where
+// no logger is injectable yet the decision is the reader's.
+language js
+
+`console.$method($...)` as $call where {
+  $method <: r"^(?:log|info|warn|error|debug|trace|dir|table)$",
+  register_diagnostic(span=$call, message="Log through the logger — inject LOGGER (apps/server/src/telemetry/logger.ts) and write logger.info(msg, fields): one JSON line with level, timestamp and request id. console.* belongs to telemetry/ and common/ports/ only.", severity="warn")
+}

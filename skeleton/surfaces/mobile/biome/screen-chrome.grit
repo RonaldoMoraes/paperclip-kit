@@ -1,0 +1,28 @@
+// A screen renders itself and nothing around it. The status bar belongs to the route
+// group, which sets it from `useColorScheme()` because a pinned style leaves the clock
+// invisible in one scheme; a screen that pins its own wins that argument wherever it is
+// mounted. The navigator is the same boundary from the other side: a screen that imports
+// `expo-router` reads or moves the stack, so it cannot be rendered bare in its spec and
+// cannot be reused under a second route. It takes what it needs as props — `onBack`,
+// `onOpen` — and the route calls the router. `import type` is exempt: a screen may name a
+// router type in its props.
+//
+// Scoped by biome.json to mobile's `features/**/screens/**`, source only: a spec may
+// `vi.mock("expo-router")`, and the string is not an import.
+language js
+
+or {
+  JsImport() as $stmt where {
+    $stmt <: contains JsModuleSource() as $src,
+    $stmt <: not r"^import\s+type\b[\s\S]*$",
+    $src <: r"^[\"']react-native[\"']$",
+    $stmt <: r"[\s\S]*\bStatusBar\b[\s\S]*",
+    register_diagnostic(span=$stmt, message="The status bar belongs to the route group, which sets it from the scheme — a screen that pins its own style leaves the clock invisible wherever the ground is the other colour. Drop the StatusBar and let the route decide.", severity="error")
+  },
+  JsImport() as $stmt where {
+    $stmt <: contains JsModuleSource() as $src,
+    $stmt <: not r"^import\s+type\b[\s\S]*$",
+    $src <: r"^[\"']expo-router[\"']$",
+    register_diagnostic(span=$src, message="A screen does not own the navigator: it takes what it needs as props (onBack, onOpen) and the route calls the router. `import type` from expo-router is fine.", severity="error")
+  }
+}
