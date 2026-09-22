@@ -1,5 +1,5 @@
 ---
-description: Switch the active role/lens (ceo, cto, cmo, engineer, researcher, uiux, or a hired role)
+description: Switch the active role/lens (ceo, cto, crgo, cmo, tech-lead, engineer, critic, researcher, uiux, or a hired role)
 argument-hint: "<role>"
 ---
 

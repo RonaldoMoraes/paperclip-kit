@@ -146,4 +146,7 @@ cat <<EOF
     /grill           → the interview; writes .paperclip/project.manifest.json
     /scaffold        → generates the product tree from the manifest and runs the gates
   Then /feature <name> clones the golden-path feature for your first real one.
+
+  Upgrading an older install? Files you already had were skipped, never replaced —
+  $KIT_DIR/UPGRADE.md lists what to replace or merge by hand.
 EOF

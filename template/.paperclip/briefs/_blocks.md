@@ -2,11 +2,20 @@
 
 Paste these into an agent brief **verbatim**; they are the rules that hold on every delegated task,
 so writing them by hand each time is how they drift and how a brief reaches 1000 words. Fill only
-the angle-bracket slots: `<id>` (the ledger task, `w-0007-…`), `<you>` (the agent's name), `<paths>`
-(its write allowlist), `<contract>` (the campaign contract), `<N>` (the report's line cap).
+the angle-bracket slots: `<id>` (the ledger task, `w-0007-…`), `<you>` (the agent's name), `<pc>`
+(`.paperclip/bin/pc`, or from a worktree `PAPERCLIP_DIR=<primary>/.paperclip <primary>/.paperclip/bin/pc`),
+`<paths>` (its write allowlist), `<contract>` (the campaign contract — for a build, the order),
+`<N>` (the report's line cap), and the build slots named in each block below.
 
-Compose in the order below and add nothing but the task's own **What to build** — see
-[`README.md`](README.md) for an assembled example.
+Which blocks a brief takes depends on its kind — a campaign task, a build slice, a Direct
+mini-order, a planner, a critic — and [`README.md`](README.md) lists them, with an assembled
+example. A campaign brief adds the task's own **What to build**; a build or Direct brief adds
+nothing, because the order or the mini-order already says it.
+
+**One home per rule.** A persona (`.claude/agents/<role>.md`) says how its role behaves; a
+block carries what this task binds it to. The build blocks (Order, Tests first, Deviation,
+Mini-order) are slots and nothing else — the executor's discipline behind them is in
+`.claude/agents/engineer.md`, and it is not repeated here.
 
 ---
 
@@ -27,13 +36,12 @@ silent say so in your report instead of inventing a convention the next agent wo
 
 ```
 Ledger — your task is <id>, and the ledger, not this transcript, is what survives you.
-`pc` is `.paperclip/bin/pc`; call it by that path if it is not on yours. Run `pc task start
-<id> --owner <you>` before your first edit, `pc task note <id> "<what changed, what you
-learned>"` at each real step, and close with `pc task done <id> --note "<result>"` — add
-`--tokens <n>` if you can see your own count — or `pc task fail <id> --note "<why, and
-where you stopped>"` if you stop early, so whoever picks this up starts from your notes
-instead of from scratch. If you need the Founder to decide: `pc task block <id> --on
-founder`, then stop.
+Below, `pc` means <pc>. Run `pc task start <id> --owner <you>` before your first edit,
+`pc task note <id> "<what changed, what you learned>"` at each real step, and close with
+`pc task done <id> --note "<result>"` — add `--tokens <n>` if you can see your own count —
+or `pc task fail <id> --note "<why, and where you stopped>"` if you stop early, so whoever
+picks this up starts from your notes instead of from scratch. If you need the Founder to
+decide: `pc task block <id> --on founder`, then stop.
 ```
 
 ## Findings
@@ -80,13 +88,62 @@ so the next agent reads it in seconds. Facts belong in files; only the reasoning
 you there belongs in this transcript, and this transcript is thrown away.
 ```
 
+## Order
+
+Build slices and Guided work. Slots: `<order>` (absolute path), `<slice>`, `<in-flight>`,
+`<where>`.
+
+```
+Order — <order>, slice <slice>; your ledger task is <id>. In flight beside you: <in-flight>.
+Working directory: <where>.
+```
+
+## Tests first
+
+Slots from the slice's "Tests first" and gate lines in the order.
+
+```
+Tests first — <test file › test name> must fail before the change and pass after.
+Red: `<exact command>` → <the failure expected>. Green: the same command → ≥ <count> passed.
+```
+
+## Deviation
+
+Slot: `<limit>` — the surprise limit in `.paperclip/HARNESS.md` › Founder policy, copied
+whole, the closed-decision clause included.
+
+```
+Deviation — surprise limit for this task: <limit>. Log each surprise when you meet it:
+`pc task note <id> "surprise: <what the order implied> → <what the code does>"`.
+```
+
+## Mini-order
+
+The Direct tier (`.paperclip/HARNESS.md` §1): the whole order in about ten lines.
+
+```
+Mini-order — task <id>.
+Change: <what, where — file paths>
+Why: <one line>
+Verify: `<exact command>` → <expected>
+Stop if: <what would mean this is not micro>
+```
+
 ## Report format
 
 ```
-Report — at most <N> lines, in this order: what changed (one line per file, absolute
-paths); the commands you ran, each with pass or fail; what is still red and why; the
-decisions you had to make where the contract was silent. No code dumps, no recap of what
-you read, no restating the brief back to me. If you ran out of scope, context or time,
-say exactly where you stopped — your ledger notes plus this report are the entire handoff,
-and anything you leave out only exists in a transcript nobody will read.
+Report — at most <N> lines, in this order:
+STATUS: done | blocked | not micro | no order
+STEPS: each step of your order ✓ / ✗
+GATES: `command` → pass | fail | not run, with the decisive lines of the real output
+RED→GREEN: the failing run, then the passing run (when a test had to fail first)
+SURPRISES: every place the code differed from what the order or contract implied — even
+the ones you handled
+DISCOVERIES: the ids of the findings you filed
+DECISIONS: what you had to decide where the order or contract was silent
+FILES: one line per file touched, absolute paths
+LEFT: what is still red and why, and exactly where you stopped
+No code dumps, no recap of what you read, no restating the brief back to me. Your ledger
+notes plus this report are the entire handoff, and anything you leave out only exists in
+a transcript nobody will read.
 ```

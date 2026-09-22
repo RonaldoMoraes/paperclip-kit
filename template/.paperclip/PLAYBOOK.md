@@ -10,14 +10,16 @@ The company's constitution. Active when Paperclip is **ON**.
 | **CTO** | Architecture, stack, code quality, security, devops, tradeoffs | Founder + CEO | "CTO mode" / `/role cto` | blue |
 | **CRGO** | Revenue + growth: monetization, pricing, funnel/conversion, activation, retention, growth experiments, unit economics | Founder + CEO | "CRGO / Revenue / Growth mode" / `/role crgo` | — |
 | **CMO** | Brand, positioning, messaging, content, channels (demand creation) | CEO | "CMO mode" / `/role cmo` | — |
-| **Engineer** | Builds features, writes tests, ships to spec | CTO | "Engineer mode" / `/role engineer` | green |
+| **Tech Lead** | The *how, exactly*: turns a CTO position into a work order a cold executor can run; checkpoint after every slice; does small uncertain fixes itself (strong model) | CTO | "Tech Lead mode" / `/role tech-lead` | purple |
+| **Engineer** | The executor: builds, tests and proves a written order exactly — a slice of a work order, a ~10-line mini-order, or a campaign brief that is an order. No design, no open-ended asks (cheap model: `sonnet`) | Tech Lead (orders) · CTO | "Engineer mode" / `/role engineer` | green |
+| **Critic** | Attacks a plan before anyone builds it: false assumptions, late proof, gates that pass on wrong code. Read-only | CTO | "Critic mode" / `/role critic` | yellow |
 | **Researcher** | Market/user/competitor/tech research; evidence-grounded, flags uncertainty | CEO | "Researcher mode" / `/role researcher` | yellow |
 | **UI/UX** | Product design, flows, accessibility, visual craft | CEO | "UI/UX mode" / `/role uiux` | pink |
 | **Platform Engineer** | Golden paths, shared abstractions, contract/mock machinery, guardrails, CI/build tooling | CTO | "Platform Engineer mode" / `/role platform-engineer` | cyan |
 | **Design Systems Engineer** | Design tokens, theming, primitive component APIs, a11y in primitives, system-vs-one-off calls | CTO | "Design Systems Engineer mode" / `/role design-systems-engineer` | orange |
 | **Mobile Engineer** | Expo/RN architecture, native capabilities, auth transport, offline, OTA/store shipping | CTO | "Mobile Engineer mode" / `/role mobile-engineer` | red |
 
-Colors are the `color:` frontmatter in `.claude/agents/<role>.md` — they tint the agent's activity in the Claude Code UI so parallel subagents are tellable apart. Every hired role gets a color distinct from those in use (palette: red, blue, green, yellow, purple, orange, pink, cyan).
+Colors are the `color:` frontmatter in `.claude/agents/<role>.md` — they tint the agent's activity in the Claude Code UI so parallel subagents are tellable apart. Every hired role gets a color distinct from those in use (palette: red, blue, green, yellow, purple, orange, pink, cyan); once all eight are taken — as they are by default — a new role reuses the one least likely to run beside it (Tech Lead shares purple with the CEO, Critic yellow with the Researcher).
 
 **Reporting:** the **CEO** and **CRGO** report directly to the **Founder** (the two C-levels closest to the Founder's calls — strategy and revenue); everyone else rolls up through the CEO/CTO. CRGO and CMO are peers with a clean split: **CMO = demand/brand/message**, **CRGO = revenue mechanics + growth/conversion/retention + the numbers.**
 
@@ -33,6 +35,14 @@ Colors are the `color:` frontmatter in `.claude/agents/<role>.md` — they tint 
 1. **Start** — read `.paperclip/STATUS.md` (the Control Panel) and run `pc status` (the work ledger) → you can state what's parked / in-flight / done / next without re-reading code or past chats.
 2. **During** — keep `STATUS.md` current *as things change* (an item parks → §1, gates → §2, goes live → §3, closes → §4). **Never silently drop a parked decision.**
 3. **End** — reconcile `STATUS.md`; log new decisions in `.paperclip/decisions.md`.
+
+## How engineering work flows
+Full rules: **`.paperclip/HARNESS.md`**. One question routes every engineering task — *can I write the exact change and how to verify it in ~10 lines, right now?*
+- **Yes → Direct:** a mini-order straight to `engineer` through `/task`. No planner, no ceremony. An engineer who finds it is not micro returns at once and says why.
+- **No, but small → Guided:** `tech-lead` does it, or probes first. The CTO reviews what it wrote.
+- **No, and big — or it touches a seam (auth, billing, schema, shared contracts, deploys — the list is policy) → Full (`/build`):** goal card → `tech-lead` plans → `critic` attacks → probes → slices, riskiest first, each followed by a checkpoint → close with an independent review and a tally of plan-gaps against execution-gaps.
+- **A build is a campaign** in the ledger below: its plan, critique, probes, slices and checkpoints are `pc` tasks with their own classes, a slice's allowed paths are its `--scope`, and `pc campaign close` is the build's close gate. `/campaign` is parallel breadth, `/build` sequential depth; they compose.
+- **The Founder's interruption policy** — who approves first-slice evidence, what a pause does, the surprise limit, slice size, the undo grant — is **HARNESS › Founder policy**: editable defaults, written only there. Anything irreversible or outward-facing still goes to the Founder first.
 
 ## Running work (the ledger)
 
@@ -52,7 +62,7 @@ The **ledger is the single source of truth for what is in flight**: one file per
 - **One writer per file, enforced** — the scope globs of live tasks must not overlap, and `pc` checks it rather than trusting the eye: `pc task new` refuses a `--scope` that meets any queued, running or blocked task's scope, naming the task and both globs; `pc scope check "<glob>"…` tests a partition before anything is created; `--force` accepts an overlap deliberately and records it in the notes of both tasks. The test is conservative on purpose — a false refusal costs a `--force`, a false pass costs a hand merge and a lost edit, discovered late. A task created with no scope is warned about: it claims nothing, so nothing protects it.
 - **A spec must never assert an absolute count of what other work contributes** — "every screen in the flow", never "all 14 screens". The count moves under you and turns a passing wave into a false failure.
 - **Close the campaign, don't just stop working on it** — `pc campaign close <id>` is the only thing that makes "finished" mean anything, and it refuses with the open work listed. `--force --reason "<why>"` when the Founder ends it early; the reason goes in the campaign's notes.
-- The commands over all of this: `/campaign` (run it), `/task` (open and list), `/findings` (triage), `/handoff` (end a session), `/where` (ledger reconciled against STATUS).
+- The commands over all of this: `/campaign` (run it), `/build` (one change through the harness), `/task` (open and list; Direct mini-orders), `/findings` (triage), `/handoff` (end a session), `/where` (ledger reconciled against STATUS).
 
 ## Decisions
 Log every non-trivial decision in `.paperclip/decisions.md` (`/decide`): number · date · who · context · decision. This is the durable "why" memory — future cold sessions read it.

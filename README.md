@@ -5,7 +5,7 @@ into a working product tree with the guardrails already up. Three layers, one in
 
 | layer | where | what |
 |---|---|---|
-| **Company** | `template/` | The AI company you direct as Founder: `CLAUDE.local.md` (the on/off toggle), `.paperclip/{PLAYBOOK,STATUS,STORY,decisions}.md`, the **work ledger** (`.paperclip/bin/pc` over `campaigns/`, `work/`, `findings/`, `contracts/`, `research/`, `log/`) so nothing in flight lives only in a transcript — it refuses two tasks over one path and refuses to close a campaign with open work — the brief blocks in `.paperclip/briefs/`, the role personas (CEO, CTO, CRGO, CMO, Engineer, Researcher, UI/UX), and the commands `/paperclip /role /hire /where /decide /brief` plus the work ones `/campaign /task /findings /handoff`. Local-only in a work repo. |
+| **Company** | `template/` | The AI company you direct as Founder: `CLAUDE.local.md` (the on/off toggle), `.paperclip/{PLAYBOOK,STATUS,STORY,decisions}.md`, the **work ledger** (`.paperclip/bin/pc` over `campaigns/`, `work/`, `findings/`, `contracts/`, `research/`, `log/`) so nothing in flight lives only in a transcript — it refuses two tasks over one path and refuses to close a campaign with open work — the **build harness** (`.paperclip/HARNESS.md`, work orders in `.paperclip/orders/`), the brief blocks in `.paperclip/briefs/`, the role personas (CEO, CTO, CRGO, CMO, Tech Lead, Engineer — the executor — Critic, Researcher, UI/UX), and the commands `/paperclip /role /hire /where /decide /brief` plus the work ones `/campaign /build /task /findings /handoff`. Local-only in a work repo. |
 | **Engineering** | `engineering/` | Project-agnostic intelligence: personas (platform, design-systems, mobile engineers, the Playwright trio), commands (`/grill /scaffold /feature /module`, worktrees, Playwright), skills (guardrails, worktrees, mobile, web-verify, lib, auth, Playwright). One source of truth wherever it lands: the files go to `.agents/{agents,commands,skills}` and `.claude/` links into them, one symlink per entry — `install.sh` and the scaffold write the same layout. |
 | **Skeleton** | `skeleton/` + `bin/` | The boilerplate a production web/server/mobile product was distilled into: `base/` (NestJS server, shared contracts/domain/ui, guards, CI, docs, `AGENTS.md`), `surfaces/{web,mobile}/`, `modules/<id>/`, `versions.json` (every pin, once). `bin/scaffold.sh` assembles them from a manifest. |
 
@@ -58,9 +58,39 @@ installer adds what is missing and touches nothing else.
    real feature. **`/module <id>`** adds a module later.
 
 Day to day: `/where` for the control panel reconciled against the ledger, `/task` to open or list work,
-`/campaign` when the work needs more than one agent, `/findings` to triage what they raised, `/handoff` to
-end a session so the next one starts cold and complete, `/decide` for the log, `/brief` for deep context,
-`/role cto` (or "CTO mode") to switch lens, `/hire` to add a role.
+`/campaign` when the work needs more than one agent, `/build` when one change is big or uncertain,
+`/findings` to triage what they raised, `/handoff` to end a session so the next one starts cold and
+complete, `/decide` for the log, `/brief` for deep context, `/role cto` (or "CTO mode") to switch lens,
+`/hire` to add a role.
+
+## How engineering work flows — the build harness
+
+One rule: **a wrong plan must cost about 20 minutes, never 2 hours.** One question routes every
+engineering task — *can I write the exact change and how to verify it in ~10 lines, right now?*
+
+- **Yes → Direct.** A ~10-line mini-order (change · why · verify · stop-if) goes through `/task` straight
+  to `engineer`, now the **executor**: a cheap model (`sonnet`) that runs a written order exactly, never
+  designs, never touches git, cannot spawn agents, and returns `STATUS: not micro` the moment the order
+  was wrong about its size.
+- **No, but small → Guided.** `tech-lead` (strong model) does it, or probes first; the CTO reviews it.
+- **No, and big — or it touches a seam (auth, billing, schema, shared contracts, deploys) → Full,
+  `/build`:** a goal card → `tech-lead` writes a work order where every path, symbol and gate is proven
+  → `critic` (read-only) attacks it before anyone builds → probes settle every unproven assumption →
+  slices, riskiest first with real evidence fast, each followed by a checkpoint that re-runs the gates,
+  checks the diff against the slice's allowed paths and asks whether the rest of the plan still holds →
+  a surprise limit that pauses the build even when green → an independent close review whose findings
+  are tagged **plan-gap** or **execution-gap**, so the right persona gets fixed.
+
+A build **is a campaign** in the ledger: plan, critique, probes, slices and checkpoints are `pc` tasks with
+their own classes (`pc estimate` then reports what the harness itself costs), a slice's allowed paths are its
+`--scope`, and `pc campaign close` is the close gate. `/campaign` is parallel breadth, `/build` sequential
+depth; they compose. The Founder's knobs — who approves first evidence, what a pause does, the surprise
+limit, slice size, the undo grant — are editable defaults in `HARNESS.md` › Founder policy, and the Claude
+Code behaviour the harness leans on is listed there with its evidence level.
+
+**Validated on one build** (security hardening in legacy server code: ten slices, 24 critic objections all
+real, first evidence after ~11 minutes of executor time). **A second pilot of a different shape — UI or
+feature work — is recommended** before treating the defaults as settled.
 
 The ledger CLI behind those commands is **`.paperclip/bin/pc`** — always callable by that path, from any
 subdirectory; `export PATH="$PWD/.paperclip/bin:$PATH"` if you would rather type `pc`. `pc campaign new`
@@ -103,7 +133,8 @@ Every module must pass the gates alone on top of base and together with the othe
 ```
 paperclip-kit/
 ├── install.sh              company layer + engineering layer (→ .agents/, linked from .claude/); never clobbers
-├── VERSION                 0.2.0
+├── VERSION                 0.3.0
+├── UPGRADE.md              what a re-run of install.sh adds, and what an older install replaces by hand
 ├── bin/scaffold.sh         → bin/lib/scaffold.mjs (the engine) + scaffold.test.mjs
 ├── template/               layer 1
 ├── engineering/            layer 2: agents/ commands/ skills/
@@ -122,7 +153,8 @@ paperclip-kit/
 - **Change the engine**: `bin/lib/scaffold.mjs`; then `node --test bin/lib/*.test.mjs` (`npm test`),
   which builds a synthetic mini-kit in a temp dir and checks copy order, placeholders, every gen and
   merged file, `--update`, dependency errors and `--dry-run`.
-- **Grow the company layer**: edit `template/`, re-run `install.sh` anywhere — existing files stay.
+- **Grow the company layer**: edit `template/`, re-run `install.sh` anywhere — existing files stay, so a
+  change to a file an install already has goes in [`UPGRADE.md`](UPGRADE.md) as a replace-by-hand step.
 - **Ship a kit change to a product**: bump `VERSION`, then `/scaffold` (update mode) in the product;
   untouched kit files are refreshed, gen files regenerated, product edits reported and left alone.
 

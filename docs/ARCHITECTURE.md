@@ -16,8 +16,8 @@ paperclip-kit/
 │   └── lib/scaffold.mjs        # manifest → product tree (base + surfaces + modules), gen files, merges; --update, --dry-run, --force-gen; scaffold.test.mjs beside it
 ├── template/                   # LAYER 1 — company (local-only in a work repo)
 │   ├── CLAUDE.local.md         #   the on/off toggle and the Founder-facing rules
-│   ├── .paperclip/             #   PLAYBOOK · STATUS (Control Panel) · STORY · decisions; the ledger: bin/pc over campaigns/ work/ findings/ contracts/ research/ log/; briefs/_blocks.md (the invariants, written once)
-│   └── .claude/                #   role personas + /paperclip /role /hire /where /decide /brief and the work commands /campaign /task /findings /handoff
+│   ├── .paperclip/             #   PLAYBOOK · STATUS (Control Panel) · STORY · decisions; the ledger: bin/pc over campaigns/ work/ findings/ contracts/ research/ log/; briefs/_blocks.md (the invariants, written once); HARNESS.md (the build harness: triage, the Full loop, Founder policy, the Claude Code facts it relies on) + orders/ (one work order per build)
+│   └── .claude/                #   role personas (tech-lead, engineer = the executor, critic among them) + /paperclip /role /hire /where /decide /brief and the work commands /campaign /build /task /findings /handoff
 ├── engineering/                # LAYER 2 — project-agnostic intelligence; single source for install.sh AND the scaffold, and both write it the same way: files under .agents/, one .claude/<dir>/<entry> symlink each
 │   ├── agents/                 #   platform-engineer, design-systems-engineer, mobile-engineer, playwright-test-{planner,generator,healer}
 │   ├── commands/               #   grill, scaffold, feature, module, create/dispose/publish-worktree, playwright-test-{plan,generate,heal}
@@ -79,6 +79,18 @@ paperclip-kit/
    beside median duration wherever the log rows carry `--tokens`/`--model`, so "mechanical work belongs on a
    cheap model" is checkable. `/task` and `/findings` keep the two queues legible; `/handoff` ends the session
    with a file that stands alone.
+6. **One change, in depth: the build harness** (`template/.paperclip/HARNESS.md`, 0.3.0). One triage question —
+   can the change and its proof be written in ~10 lines now? — routes engineering work: **Direct** (a
+   mini-order through `/task` to `engineer`, the executor on a cheap model), **Guided** (`tech-lead` does it),
+   or **Full** (`/build`: goal card → `tech-lead`'s work order in `.paperclip/orders/` → `critic` attacks it →
+   probes → slices each followed by a checkpoint → a close review whose findings are tagged plan-gap or
+   execution-gap). A build is a campaign: its plan, critique, probe, slice and checkpoint tasks are `pc` tasks
+   with stable classes, a slice's allowed paths are its `--scope`, and `pc campaign close` is its close gate.
+   The harness adds no CLI: surprises are `surprise:` task notes and the gap tags are finding-title prefixes
+   (dedicated `pc` commands are follow-ups in `UPGRADE.md`). The Claude Code behaviour it relies on — agent
+   frontmatter (`model`, `effort`, `disallowedTools`), resume through `SendMessage`, the per-call model
+   override, hot reload, the worktree guard — is listed with its evidence level in `HARNESS.md` §10. Validated
+   on one build; a second pilot of a different shape is recommended.
 
 ## 3. The generated product (skeleton contract)
 
