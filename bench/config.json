@@ -1,0 +1,81 @@
+{
+  "fixtureRepo": "~/projects/codefactory/paperclip-cars",
+  "baseCommit": "4df05476bd3d8ed958589881328639c622b63c80",
+  "runsDir": "~/paperclip-bench/runs",
+  "model": "claude-opus-5-5",
+  "effort": null,
+  "turnTimeoutMin": 240,
+  "maxNudges": 3,
+  "maxRateLimitResumes": 3,
+  "mcpConfig": "mcp.json",
+  "disallowedTools": [
+    "AskUserQuestion",
+    "EnterPlanMode",
+    "EnterWorktree"
+  ],
+  "env": {},
+  "approaches": {
+    "paperclip": {
+      "opener": "prompts/opener-paperclip.md",
+      "installKit": true
+    },
+    "superpowers": {
+      "pluginDirs": [
+        "~/paperclip-bench/vendor/superpowers"
+      ]
+    },
+    "raw": {},
+    "superpowers-aimem": {
+      "pluginDirs": [
+        "~/paperclip-bench/vendor/superpowers"
+      ],
+      "mcpConfig": "mcp-aimem.json",
+      "setup": "aimem/setup.sh"
+    },
+    "ecc": {
+      "pluginDirs": [
+        "~/paperclip-bench/vendor/ECC"
+      ],
+      "setup": "ecc/setup.sh",
+      "env": {
+        "ECC_AGENT_DATA_HOME": "~/paperclip-bench/runs/ecc/ecc-data/agent-home",
+        "CLV2_HOMUNCULUS_DIR": "~/paperclip-bench/runs/ecc/ecc-data/homunculus"
+      }
+    },
+    "superpowers-ecc": {
+      "pluginDirs": [
+        "~/paperclip-bench/vendor/superpowers",
+        "~/paperclip-bench/vendor/ECC"
+      ],
+      "setup": "ecc/setup.sh",
+      "env": {
+        "ECC_AGENT_DATA_HOME": "~/paperclip-bench/runs/superpowers-ecc/ecc-data/agent-home",
+        "CLV2_HOMUNCULUS_DIR": "~/paperclip-bench/runs/superpowers-ecc/ecc-data/homunculus"
+      }
+    },
+    "paperclip-1.0": {
+      "opener": "prompts/opener-paperclip.md",
+      "installKit": true,
+      "pluginDirs": [
+        "~/paperclip-bench/vendor/superpowers"
+      ],
+      "mcpConfig": "mcp-aimem.json",
+      "setup": "aimem/setup.sh",
+      "setupArgs": [
+        "--no-instructions"
+      ]
+    }
+  },
+  "planDocDirs": [
+    ".paperclip/orders",
+    ".paperclip/research",
+    ".paperclip/campaigns",
+    ".paperclip/findings",
+    "docs/superpowers",
+    "docs/plans"
+  ],
+  "judgeExcludeFromChange": [
+    "docs/superpowers/",
+    "docs/plans/"
+  ]
+}

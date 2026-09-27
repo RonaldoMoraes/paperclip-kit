@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "playwright-test": {
+      "command": "npx",
+      "args": [
+        "playwright",
+        "run-test-mcp-server"
+      ],
+      "cwd": "tests"
+    },
+    "ai-memory": {
+      "type": "http",
+      "url": "http://127.0.0.1:49384/mcp"
+    }
+  }
+}
