@@ -14,10 +14,10 @@ paperclip-kit/
 ├── bin/
 │   ├── scaffold.sh             # thin wrapper: node bin/lib/scaffold.mjs (warns below node 22, refuses below 20)
 │   └── lib/scaffold.mjs        # manifest → product tree (base + surfaces + modules), gen files, merges; --update, --dry-run, --force-gen; scaffold.test.mjs beside it
-├── template/                   # LAYER 1 — company (local-only in a work repo)
-│   ├── CLAUDE.local.md         #   the on/off toggle and the Founder-facing rules
-│   ├── .paperclip/             #   PLAYBOOK · STATUS (Control Panel) · STORY · decisions; the ledger: bin/pc over campaigns/ work/ findings/ contracts/ research/ log/; briefs/_blocks.md (the invariants, written once); HARNESS.md (the build harness: triage, the Full loop, Founder policy, the Claude Code facts it relies on) + orders/ (one work order per build)
-│   └── .claude/                #   role personas (tech-lead, engineer = the executor, critic among them) + /paperclip /role /hire /where /decide /brief and the work commands /campaign /build /task /findings /handoff
+├── template/                   # LAYER 1 — company (local-only in a work repo); Superpowers is its engine, ai-memory its memory
+│   ├── CLAUDE.local.md         #   the on/off toggle and the short version of the rules
+│   ├── .paperclip/             #   COMPANY.md (the operating model) · STATUS.md (control panel) · decisions.md · roles/ (lens cards) · bin/panel (terminal + HTML dashboard, tested)
+│   └── .claude/                #   agents/researcher.md (the one parallel agent) + /paperclip /role /where /build /decide /hire /handoff
 ├── engineering/                # LAYER 2 — project-agnostic intelligence; single source for install.sh AND the scaffold, and both write it the same way: files under .agents/, one .claude/<dir>/<entry> symlink each
 │   ├── agents/                 #   platform-engineer, design-systems-engineer, mobile-engineer, playwright-test-{planner,generator,healer}
 │   ├── commands/               #   grill, scaffold, feature, module, create/dispose/publish-worktree, playwright-test-{plan,generate,heal}
@@ -62,35 +62,20 @@ paperclip-kit/
    (mock mode, hermetic). The project is "ready" only when every gate is green in the generated tree; then
    `/feature <name>` clones the `example` feature across every layer for the first real feature. Node is
    22.17.1 (`volta` reads the pin from `package.json`; nvm users `nvm use 22.17.1`).
-5. **Then the company runs on the ledger.** `.paperclip/` is not only documents: `bin/pc` — always callable as
-   `.paperclip/bin/pc`, from any subdirectory, and never installed on a PATH by the installer — writes one file
-   per fan-out in `campaigns/`, one per task in `work/`, one per defect in `findings/`, the campaign contract in
-   `contracts/`, reusable facts in `research/` — the single source of truth for what is in flight, so an agent
-   killed mid-run is recovered from its file and a cold session resumes from `pc handoff` (`--campaign <id>` for
-   one fan-out alone). `STATUS.md` stays the curated human view, §1 the Founder's parking lot, and `/where` reads
-   both and says where they disagree. Multi-agent work goes through `/campaign`: the shared contract written
-   first, one write-allowlist per task, and briefs composed from `.paperclip/briefs/_blocks.md` instead of
-   retyped. Three of those rules are mechanical rather than remembered — `pc task new` **refuses** a `--scope`
-   glob that overlaps any queued, running or blocked task (conservatively: it compares the literal head of each
-   glob and calls a tie an overlap, so a false refusal costs a `--force` and a false pass cannot cost a corrupted
-   tree; `pc scope check` asks the same question before anything exists, `--force` records the accepted overlap
-   in the notes of both tasks); `pc campaign close` **refuses** while one of its tasks is unfinished or a finding
-   one of them raised is still open, listing exactly what; and `pc estimate` reports median tokens per class
-   beside median duration wherever the log rows carry `--tokens`/`--model`, so "mechanical work belongs on a
-   cheap model" is checkable. `/task` and `/findings` keep the two queues legible; `/handoff` ends the session
-   with a file that stands alone.
-6. **One change, in depth: the build harness** (`template/.paperclip/HARNESS.md`, 0.3.0). One triage question —
-   can the change and its proof be written in ~10 lines now? — routes engineering work: **Direct** (a
-   mini-order through `/task` to `engineer`, the executor on a cheap model), **Guided** (`tech-lead` does it),
-   or **Full** (`/build`: goal card → `tech-lead`'s work order in `.paperclip/orders/` → `critic` attacks it →
-   probes → slices each followed by a checkpoint → a close review whose findings are tagged plan-gap or
-   execution-gap). A build is a campaign: its plan, critique, probe, slice and checkpoint tasks are `pc` tasks
-   with stable classes, a slice's allowed paths are its `--scope`, and `pc campaign close` is its close gate.
-   The harness adds no CLI: surprises are `surprise:` task notes and the gap tags are finding-title prefixes
-   (dedicated `pc` commands are follow-ups in `UPGRADE.md`). The Claude Code behaviour it relies on — agent
-   frontmatter (`model`, `effort`, `disallowedTools`), resume through `SendMessage`, the per-call model
-   override, hot reload, the worktree guard — is listed with its evidence level in `HARNESS.md` §10. Validated
-   on one build; a second pilot of a different shape is recommended.
+5. **Then the company runs.** `paperclip on` wakes it: the main conversation takes on a **role lens** (CEO, CTO,
+   CRGO, CMO, UI/UX, or a hired one; lenses are ways of thinking, not spawned agents) and shows the control panel.
+   `.paperclip/STATUS.md` is the single answer to "where are we", written at three moments only (work starts,
+   something needs the Founder, work ends), and `.paperclip/bin/panel` draws it with Superpowers' plan progress,
+   recent decisions, memory and git: in the terminal, or as an HTML dashboard (`/where --html`).
+6. **Work is built by Superpowers.** `/build` has the CTO triage the change (Direct · Planned · Full · Parallel,
+   `COMPANY.md` §3) and run the matching Superpowers flow with the kit's defaults, each one measured in
+   `bench/RESULTS.md`: execute inline (subagents only for ~8+ truly independent tasks), plans say what and why
+   rather than listing full code, the cheapest capable model for mechanical subagent work, foreground
+   delegation, the repo's ownership rules honored, proof at the user's boundary, and one final code review for
+   the Full tier.
+7. **Memory is ai-memory.** Its hooks capture prompts, tool calls and sessions at no model cost. The model
+   writes only judgment (`STATUS.md`, `decisions.md`, plan files). `/handoff` leaves a handoff the next session
+   (any provider, any machine) starts from, or `.paperclip/HANDOFF.md` when ai-memory isn't installed.
 
 ## 3. The generated product (skeleton contract)
 

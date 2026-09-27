@@ -1,60 +1,29 @@
 # Upgrading an existing install
 
-`install.sh` never overwrites anything. Re-running it on a repo that already has the kit adds
-the files that are new in this version, skips every file that exists, refreshes
-`.paperclip/kit.json`, and registers the new paths in `.git/info/exclude`. So a file the kit
-*changed* stays at its old version in your install until you replace or merge it by hand.
-That is on purpose: those files are your company's now, and you may have edited them.
+`install.sh` never overwrites anything. A re-run adds the files that are new in this version, skips every file that exists, refreshes `.paperclip/kit.json`, and registers new paths in `.git/info/exclude`.
 
-## 0.2.0 → 0.3.0 — the build harness
+## 0.3 → 1.0: a rewrite of the company layer
 
-**Added by a re-run** (`~/paperclip-kit/install.sh /path/to/repo`), no action needed:
+1.0 replaces the build harness (`HARNESS.md`, work orders, the critic loop, per-slice checkpoints), the `pc` ledger and the eight spawned personas with:
+- **role lenses**, not spawned agents;
+- a **control panel** (`STATUS.md`, drawn by `.paperclip/bin/panel`);
+- **Superpowers** as the engineering engine;
+- **ai-memory** as the memory.
 
-- `.paperclip/HARNESS.md` — the rules, the Founder policy defaults, the Claude Code facts
-- `.paperclip/orders/README.md` — the work-order template
-- `.claude/agents/tech-lead.md`, `.claude/agents/critic.md`
-- `.claude/commands/build.md`
+The benchmark behind the change is in `bench/RESULTS.md`.
 
-**Kept at 0.2.0 — replace or merge by hand.** Compare each with the kit's copy first
-(`diff -u <file> ~/paperclip-kit/template/<file>`, run from the repo root):
+Because a re-run never replaces files, an upgrade has to move the old ones aside:
 
-| File | What changed | How to take it |
-|---|---|---|
-| `.claude/agents/engineer.md` | **Rewritten.** The generalist became the executor: `model: sonnet`, `effort: high`, `disallowedTools: Agent`; runs only from an order; stops on a broken premise; hands back `STATUS`, surprises, red→green. The harness does not work with the old persona. | Replace it (`cp ~/paperclip-kit/template/.claude/agents/engineer.md .claude/agents/`) unless you edited it — then carry your edits onto the new file. |
-| `.paperclip/briefs/_blocks.md` | New blocks Order, Tests first, Deviation, Mini-order; the Ledger block takes a `<pc>` slot; the Report block is now the executor's hand-back shape (`STATUS` first, `SURPRISES`). | Replace, or add the new blocks and merge the two changed ones. |
-| `.paperclip/briefs/README.md` | Which blocks each kind of brief takes. | Replace or merge. |
-| `.paperclip/PLAYBOOK.md` | Tech Lead and Critic rows; the Engineer row; the colour-reuse note; the section "How engineering work flows" before "Running work (the ledger)"; `/build` in the command list. | Merge by hand — this is the file most likely to hold your own edits. |
-| `.claude/agents/cto.md` | One routing line after "In role mode you delegate". | Add the line. |
-| `.claude/commands/task.md` | Triage and the Direct (mini-order) path. | Replace or merge. |
-| `.claude/commands/campaign.md` | Cross-link to `/build`; an `engineer` task needs an order; sequencing wording (`pc task block` waits on a finding or the Founder, never on a task). | Replace or merge. |
-| `CLAUDE.local.md`, `.claude/commands/role.md` | The roster names Tech Lead and Critic; `/build` in the running-work line. | Optional. |
+```bash
+~/paperclip-kit/install.sh /path/to/repo --replace-company --with-superpowers
+```
 
-Then **reload the Claude Code session**: a new agent file is only listed from the next user
-turn, and an edited persona may not reload without a restart (`HARNESS.md` §10).
+`--replace-company` moves every 0.3 company-layer path into `.paperclip/.backup-<time>/`. It covers `CLAUDE.local.md`, `PLAYBOOK`, `HARNESS`, `STORY`, `STATUS`, `decisions`, `bin/pc`, the ledger folders, `briefs/` and `orders/`, and the old personas and commands. Nothing is deleted. The scaffold's own files (`project.manifest.json`, `scaffold.lock.json`) and the engineering layer are left in place.
 
-`/hire` needs nothing: all eight colours are taken by default, and its rule already reuses
-the one least likely to run beside the new role.
+Then carry your history over by hand:
+- **`STATUS.md`**: copy the rows from the backup into the new sections. §1 (waiting on the Founder) and §5 (next) map directly. In-flight work becomes §2 rows, with a plan path once Superpowers writes one.
+- **`decisions.md`**: append the old entries under the new heading format (`## NNN · date · title`) so the panel lists them.
+- **`STORY.md` and `research/`**: if ai-memory is installed, `ai-memory bootstrap` imports existing history. Otherwise keep them in the backup and point to them from `STATUS.md`.
+- **Hired roles**: turn each old `.claude/agents/<role>.md` into a lens card, `.paperclip/roles/<role>.md` (see `/hire`).
 
-## Follow-ups — not in 0.3.0
-
-0.3.0 ships the harness on conventions over the existing `pc` (`HARNESS.md` §2, §7). Four
-optional CLI additions would make them mechanical, each with tests in `pc.test.mjs`:
-
-- `pc task surprise <id> "<text>"` — a counted surprise instead of a `surprise:` note, with
-  the count in `pc status`.
-- `pc finding new … --gap plan|execution` — instead of the `[plan-gap]` / `[execution-gap]`
-  title prefix.
-- `pc scope verify <task>` — `git diff --name-only` plus untracked files against the task's
-  globs; today `tech-lead` does it by hand at the checkpoint.
-- `pc gaps` — plan-gaps against execution-gaps per class and per campaign; today a grep
-  (`HARNESS.md` §7).
-
-Seen while porting, and worth deciding with them: `pc task block --on` accepts a finding or
-`founder`, never another task, while `pc task new`'s scope-overlap message and
-`.paperclip/work/README.md` still say "sequence them with `pc task block`" — builds sequence
-by creating each slice's task when it is next instead. `pc handoff --campaign` inlines only
-`contracts/`, so a build's order is named in the handoff but not inlined.
-
-The build harness is **validated on one build** (security hardening in legacy server code).
-Run a second build of a different shape — UI or feature work — before treating the
-`HARNESS.md` §9 defaults as settled.
+Reload the Claude Code session afterwards: new commands and agents are picked up on the next start.

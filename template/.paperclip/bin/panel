@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# The company's control panel — see panel.mjs. Callable by path from anywhere in the tree.
+exec node "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/panel.mjs" "$@"

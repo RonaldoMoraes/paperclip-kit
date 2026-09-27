@@ -1,104 +1,60 @@
 # Paperclip Kit
 
-Turns any directory into an AI-ready product company for Claude Code — and, after one interview,
-into a working product tree with the guardrails already up. Three layers, one install:
+Turns any repo into an AI company you direct as Founder, then (after one interview) into a working product tree with the guardrails already up. It's built to *feel* like a company and *cost* like plain Claude Code: [Superpowers](https://github.com/obra/superpowers) is the engineering engine, [ai-memory](https://github.com/akitaonrails/ai-memory) is the memory, and the kit adds the company on top.
 
 | layer | where | what |
 |---|---|---|
-| **Company** | `template/` | The AI company you direct as Founder: `CLAUDE.local.md` (the on/off toggle), `.paperclip/{PLAYBOOK,STATUS,STORY,decisions}.md`, the **work ledger** (`.paperclip/bin/pc` over `campaigns/`, `work/`, `findings/`, `contracts/`, `research/`, `log/`) so nothing in flight lives only in a transcript — it refuses two tasks over one path and refuses to close a campaign with open work — the **build harness** (`.paperclip/HARNESS.md`, work orders in `.paperclip/orders/`), the brief blocks in `.paperclip/briefs/`, the role personas (CEO, CTO, CRGO, CMO, Tech Lead, Engineer — the executor — Critic, Researcher, UI/UX), and the commands `/paperclip /role /hire /where /decide /brief` plus the work ones `/campaign /build /task /findings /handoff`. Local-only in a work repo. |
-| **Engineering** | `engineering/` | Project-agnostic intelligence: personas (platform, design-systems, mobile engineers, the Playwright trio), commands (`/grill /scaffold /feature /module`, worktrees, Playwright), skills (guardrails, worktrees, mobile, web-verify, lib, auth, Playwright). One source of truth wherever it lands: the files go to `.agents/{agents,commands,skills}` and `.claude/` links into them, one symlink per entry — `install.sh` and the scaffold write the same layout. |
-| **Skeleton** | `skeleton/` + `bin/` | The boilerplate a production web/server/mobile product was distilled into: `base/` (NestJS server, shared contracts/domain/ui, guards, CI, docs, `AGENTS.md`), `surfaces/{web,mobile}/`, `modules/<id>/`, `versions.json` (every pin, once). `bin/scaffold.sh` assembles them from a manifest. |
+| **Company** | `template/` | Role lenses (CEO, CTO, CRGO, CMO, UI/UX, plus any you hire), a control panel (`STATUS.md`, drawn in the terminal or as an HTML dashboard by `.paperclip/bin/panel`), a decision log, and seven commands: `/paperclip /role /where /build /decide /hire /handoff`. Local-only in a work repo. |
+| **Engineering** | `engineering/` | Project-agnostic intelligence: personas, `/grill /scaffold /feature /module`, worktrees, Playwright, and skills (guardrails, mobile, web-verify, lib, auth). The files land in `.agents/`, with one symlink per entry in `.claude/`. |
+| **Skeleton** | `skeleton/` + `bin/` | The boilerplate a production web/server/mobile product was distilled into. `bin/scaffold.sh` assembles it from a manifest. |
 
-Patterns are ported; product code is not. The generated product has one golden-path feature
-(`example`) in every layer, and `/feature` clones it.
+## Why it's built this way
 
-## Prerequisites
-
-- **Node 22.17.1** — a machine default of 20 is common. `volta` reads the generated `package.json` pin
-  by itself; with nvm, `nvm use 22.17.1` inside the product. The scaffold engine runs on 20 with a
-  warning; `yarn install` and the gates need 22.
-- **Yarn 4** through corepack: `corepack enable` (the product pins `yarn@4.18.0`).
-- **Docker** — only for the `db-prisma` module (`docker-compose.db.yml`, Postgres 16).
-- **Chromium** for the e2e gate: `yarn --cwd tests playwright:install`, once per machine.
-- `bash` for `install.sh`. The kit itself has zero npm dependencies.
+1.0 is a rewrite, driven by a benchmark: the same feature built six ways ([`bench/RESULTS.md`](bench/RESULTS.md)). The 0.3 build harness took 197+ awake minutes and ≥ $57 without finishing, where plain Claude Code and Superpowers + ai-memory each finished in ~45 minutes for ~$18, with top scores from a blind judge. What made 0.3 slow was a relay of agents per feature, a 101 KB work order read ~70 times, and 153 hand-kept ledger calls. None of that was what made it feel like a company. So 1.0 keeps the feel and drops the machinery. The design is in [`docs/DESIGN-lite.md`](docs/DESIGN-lite.md).
 
 ## Install
 
 ```bash
-~/paperclip-kit/install.sh /path/to/repo      # into an existing repo (or run it from inside)
-~/paperclip-kit/install.sh --new ~/code/acme  # create the directory, then install
+~/paperclip-kit/install.sh /path/to/repo --with-superpowers   # the company + Superpowers for that repo
+~/paperclip-kit/install.sh --new ~/code/acme                  # create the directory, then install
+~/paperclip-kit/install.sh . --replace-company                # upgrading from 0.3 (old files move to a backup)
 ```
 
-Nothing is ever clobbered. The company layer lands as real files (`CLAUDE.local.md`, `.paperclip/`,
-its own `.claude/{agents,commands}/*.md`); the engineering layer lands in `.agents/{agents,commands,skills}`
-with one relative symlink per entry in `.claude/` beside them — different file names, so `/paperclip`
-and `/grill` sit in the same directory, one a file and one a link. Edit only under `.agents/`.
-In a repo with `.git`, every installed path (link included) goes to `.git/info/exclude` (local-only),
-so the work repo stays pristine. `.paperclip/kit.json` records where the kit lives; re-running the
-installer adds what is missing and touches nothing else.
+- **Superpowers**: `--with-superpowers` runs `claude plugin install superpowers@claude-plugins-official --scope local`, so it's enabled for that repo only. Or install it yourself inside Claude Code.
+- **ai-memory** (recommended, optional): install it once per machine ([quick start](https://github.com/akitaonrails/ai-memory#quick-start)), then `ai-memory install-hooks --agent claude-code --apply` and `ai-memory install-mcp --client claude-code --apply`. Without it, `/handoff` writes `.paperclip/HANDOFF.md` instead.
+- **Nothing is ever clobbered.** In a repo with `.git`, every installed path goes to `.git/info/exclude`. `.paperclip/kit.json` records where the kit lives.
+- **Prerequisites** for the product layer: Node 22.17.1, Yarn 4 via corepack, Docker (for `db-prisma`), and Chromium for the e2e gate.
 
-## The flow
+## Using the company
 
-1. **`paperclip on`** — the company wakes up (off by default each session).
-2. **`/grill`** — an interview, not a form: fourteen areas (product, surfaces, repo shape, data, auth,
-   payments, LLM, notifications, analytics, hosting, compliance, team/tickets, naming, working style)
-   plus each selected module's own questions. Small batches, defaults with their cost, one confirmed
-   line per answer. Writes `.paperclip/project.manifest.json`
-   ([schema](docs/manifest.schema.json), [example](docs/manifest.example.json)).
-3. **`/scaffold`** — runs `bin/scaffold.sh --manifest .paperclip/project.manifest.json --out .`:
-   base → surfaces → modules in dependency order (surface and module `requires` checked, placeholders
-   substituted), the gen files (`KIT_MODULES`, `KIT_PORTS`, `KIT_HANDLERS`, `KIT_GATES`…), the merged
-   files (`package.json`, `.env.example`, `biome.json`, `AGENTS.md`…), the engineering layer. Then Claude
-   finishes what a script cannot — `HUSKY=0 yarn install`, `yarn routes:generate` (web),
-   `yarn db:generate` (db-prisma), the modules' post-scaffold notes — and runs the gates
-   `typecheck · lint · lint:guards · test · test:contract · test:e2e:validate · test:e2e`, reporting
-   each honestly. Same manifest, same tree. `--update` re-applies a changed manifest without touching
-   product edits.
-4. **`/feature <name>`** — clones `example` across contract, server, web, mobile and e2e for the first
-   real feature. **`/module <id>`** adds a module later.
+```
+paperclip on            → the CEO answers, with the control panel
+CTO mode · /role cto    → switch lens; every answer opens with the lens name
+/build <what>           → the CTO triages it and runs it through Superpowers
+/where  ·  /where --html → the control panel, reconciled against plans and git, or as a dashboard
+/decide <call>          → log a decision that's expensive to reverse
+/hire <role>            → a new lens (or a parallel agent, when the work must run beside you)
+/handoff                → STATUS updated + a handoff the next session starts from (any provider)
+```
 
-Day to day: `/where` for the control panel reconciled against the ledger, `/task` to open or list work,
-`/campaign` when the work needs more than one agent, `/build` when one change is big or uncertain,
-`/findings` to triage what they raised, `/handoff` to end a session so the next one starts cold and
-complete, `/decide` for the log, `/brief` for deep context, `/role cto` (or "CTO mode") to switch lens,
-`/hire` to add a role.
+**How `/build` routes work** (`COMPANY.md` §3). One question: *can I state the exact change and how to prove it in ~10 lines, right now?* **Direct**: do it and verify. **Planned**: a short Superpowers plan, executed inline. **Full**: brainstorming → plan → inline execution → one final code review. **Parallel**: independent pieces, one writer per file. The defaults, each backed by the benchmark:
+- **Inline execution first.** Subagents only for ~8+ truly independent tasks.
+- **Proportionate plans.** What and why; code only where it's the subtle part.
+- **The cheapest capable model** for mechanical subagent work.
+- **The repo's ownership rules honored.**
+- **Proof at the user's boundary.**
 
-## How engineering work flows — the build harness
+**The control panel** is `.paperclip/STATUS.md`: what's waiting on you, what's in flight (with its Superpowers plan's progress), what's live, done and next. `.paperclip/bin/panel` draws it, `--compact` for session start and end, `--html` for the dashboard, `--json` for scripts. It's updated at three moments only, because every write is a round trip.
 
-One rule: **a wrong plan must cost about 20 minutes, never 2 hours.** One question routes every
-engineering task — *can I write the exact change and how to verify it in ~10 lines, right now?*
+## The product flow
 
-- **Yes → Direct.** A ~10-line mini-order (change · why · verify · stop-if) goes through `/task` straight
-  to `engineer`, now the **executor**: a cheap model (`sonnet`) that runs a written order exactly, never
-  designs, never touches git, cannot spawn agents, and returns `STATUS: not micro` the moment the order
-  was wrong about its size.
-- **No, but small → Guided.** `tech-lead` (strong model) does it, or probes first; the CTO reviews it.
-- **No, and big — or it touches a seam (auth, billing, schema, shared contracts, deploys) → Full,
-  `/build`:** a goal card → `tech-lead` writes a work order where every path, symbol and gate is proven
-  → `critic` (read-only) attacks it before anyone builds → probes settle every unproven assumption →
-  slices, riskiest first with real evidence fast, each followed by a checkpoint that re-runs the gates,
-  checks the diff against the slice's allowed paths and asks whether the rest of the plan still holds →
-  a surprise limit that pauses the build even when green → an independent close review whose findings
-  are tagged **plan-gap** or **execution-gap**, so the right persona gets fixed.
+1. **`/grill`**: an interview, not a form. It covers fourteen areas plus each selected module's questions, and writes `.paperclip/project.manifest.json` ([schema](docs/manifest.schema.json), [example](docs/manifest.example.json)).
+2. **`/scaffold`**: runs `bin/scaffold.sh --manifest .paperclip/project.manifest.json --out .`, then installs and runs the gates `typecheck · lint · lint:guards · test · test:contract · test:e2e:validate · test:e2e`, reporting each honestly. `--update` re-applies a changed manifest without touching product edits.
+3. **`/feature <name>`** clones the golden-path `example` feature across every layer. **`/module <id>`** adds a module later.
 
-A build **is a campaign** in the ledger: plan, critique, probes, slices and checkpoints are `pc` tasks with
-their own classes (`pc estimate` then reports what the harness itself costs), a slice's allowed paths are its
-`--scope`, and `pc campaign close` is the close gate. `/campaign` is parallel breadth, `/build` sequential
-depth; they compose. The Founder's knobs — who approves first evidence, what a pause does, the surprise
-limit, slice size, the undo grant — are editable defaults in `HARNESS.md` › Founder policy, and the Claude
-Code behaviour the harness leans on is listed there with its evidence level.
+## The benchmark
 
-**Validated on one build** (security hardening in legacy server code: ten slices, 24 critic objections all
-real, first evidence after ~11 minutes of executor time). **A second pilot of a different shape — UI or
-feature work — is recommended** before treating the defaults as settled.
-
-The ledger CLI behind those commands is **`.paperclip/bin/pc`** — always callable by that path, from any
-subdirectory; `export PATH="$PWD/.paperclip/bin:$PATH"` if you would rather type `pc`. `pc campaign new`
-opens a fan-out and `pc campaign close` refuses to end one while a task is unfinished or a finding it
-raised is open; `pc task new` refuses a `--scope` glob that overlaps a live task (`pc scope check` asks the
-same question first, `--force` accepts an overlap and records it on both tasks); `pc estimate` reports the
-median duration — and the median tokens, where the rows carry them — per task class; `pc handoff` writes a
-brief a cold session can resume from, `--campaign <id>` for one fan-out alone.
+[`bench/`](bench/README.md) runs one real task through several approaches, one at a time, under identical conditions. It reports awake time, tokens and cost per phase, the repo's gates, a 21-check hidden acceptance test, and a blind judge. Every run is isolated from your own Claude setup and kept awake with `caffeinate`. Add an approach in `bench/config.json` and run `bench/bench.sh <approach>`.
 
 ## What the generated product contains
 
@@ -133,13 +89,14 @@ Every module must pass the gates alone on top of base and together with the othe
 ```
 paperclip-kit/
 ├── install.sh              company layer + engineering layer (→ .agents/, linked from .claude/); never clobbers
-├── VERSION                 0.3.0
+├── VERSION                 1.0.0
 ├── UPGRADE.md              what a re-run of install.sh adds, and what an older install replaces by hand
 ├── bin/scaffold.sh         → bin/lib/scaffold.mjs (the engine) + scaffold.test.mjs
-├── template/               layer 1
+├── template/               layer 1: CLAUDE.local.md · .paperclip/{COMPANY.md, STATUS.md, decisions.md, roles/, bin/panel} · .claude/{agents,commands}
 ├── engineering/            layer 2: agents/ commands/ skills/
 ├── skeleton/               layer 3: versions.json base/ surfaces/{web,mobile}/ modules/<id>/
-└── docs/                   ARCHITECTURE.md (the contract) · MODULES.md (authoring guide)
+├── bench/                  the benchmark: TASK.md, run/evaluate/judge/report scripts, RESULTS.md
+└── docs/                   ARCHITECTURE.md (the contract) · MODULES.md (authoring guide) · DESIGN-lite.md (why 1.0)
                             manifest.schema.json · manifest.example.json · module.schema.json
 ```
 
