@@ -81,7 +81,7 @@ test('collect links an in-flight row to its plan and renders both views', async 
   assert.equal(m.lens, 'cto');
   const text = renderText(m);
   assert.match(text, /Waiting on you \(1\)/);
-  assert.match(text, /Vehicle inventory v1 · CTO {2}█{4}░{8} 1\/3/);
+  assert.match(text, /Vehicle inventory v1 {2}█{4}░{8} 1\/3 {2}CTO · building/);
   assert.match(text, /CTO on duty/);
   const html = renderHtml(m);
   assert.match(html, /Waiting on you · 1/);
@@ -125,4 +125,20 @@ test('an older company: other column names, ### decisions, numbered oldest-first
   assert.equal(s.sections.F, undefined, 'lettered sections are not panel sections');
   const d = parseDecisions('# Decision Log\n### 001 — World A → World B pivot\n**Date:** 2026-06-20\n\n### 002 — Men\'s health focus\n**Date:** 2026-06-21\n');
   assert.deepEqual(d, [{ n: '002', date: '2026-06-21', title: "Men's health focus" }, { n: '001', date: '2026-06-20', title: 'World A → World B pivot' }]);
+});
+
+test('a lived-in STATUS stays readable: resolved rows hidden, long rows clipped, long lists capped', async () => {
+  const { isResolved, clip } = await import('./panel.mjs');
+  const rows = [
+    '| 1 | ~~Old call~~ **RESOLVED** | x | — |',
+    ...Array.from({ length: 12 }, (_, i) => `| ${i + 2} | **Call ${i}** ${'very long context '.repeat(20)} | ctx | ${'a long recommendation '.repeat(10)} |`),
+  ];
+  const s = parseStatus(`## 1. Waiting\n| # | Decision | Context | Recommendation |\n|---|---|---|---|\n${rows.join('\n')}\n`);
+  assert.equal(isResolved(s.sections['1'].rows[0]), true);
+  const text = renderText({ name: 'x', lens: null, status: s, plans: [], decisions: [], roles: [], memory: { kind: 'none' }, git: {} }, { width: 100 });
+  assert.match(text, /Waiting on you \(12 · 1 resolved, hidden\)/);
+  assert.match(text, /\+4 more in STATUS\.md/);
+  assert.ok(text.split('\n').every((l) => l.length <= 102), 'every line fits the width');
+  assert.doesNotMatch(text, /\*\*/);
+  assert.equal(clip('**a** `b` ~~c~~ d', 20), 'a b d');
 });

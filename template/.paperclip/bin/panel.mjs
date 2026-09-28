@@ -71,6 +71,15 @@ export function parseDecisions(md) {
   return out.sort((a, b) => Number(b.n) - Number(a.n));
 }
 
+/** A row whose title is struck through (`~~…~~`) is resolved: kept in STATUS.md as history, not shown. */
+export const isResolved = (row) => /^~~/.test(rowView(row).title.trim());
+
+/** One terminal line: markdown markers dropped, clipped to the width with an ellipsis. */
+export function clip(s, width) {
+  const plain = String(s ?? '').replace(/~~[^~]*~~/g, '').replace(/\*\*|`/g, '').replace(/\s+/g, ' ').trim();
+  return plain.length > width ? plain.slice(0, Math.max(1, width - 1)) + '…' : plain;
+}
+
 /** A STATUS row's display fields, whatever the table calls its columns. */
 export function rowView(row) {
   const keys = Object.keys(row).filter((k) => !k.startsWith('_'));
@@ -177,9 +186,12 @@ export function bar(done, total, width = 16) {
   return '█'.repeat(n) + '░'.repeat(width - n);
 }
 
-export function renderText(m, { color = false, compact = false } = {}) {
+export function renderText(m, { color = false, compact = false, width = 100 } = {}) {
   const c = (k, s) => (color ? PAINT[k](s) : s);
   const W = 74;
+  const TXT = Math.max(40, width - 6); // room for the frame and the indent
+  const MAX = compact ? 3 : 8;
+  const more = (n) => (n > 0 ? [line(c('dim', `   +${n} more in STATUS.md`))] : []);
   const line = (s = '') => `│ ${s}`;
   const out = [];
   const lens = m.lens ? m.roles.find((r) => r.id === m.lens) : null;
@@ -188,32 +200,43 @@ export function renderText(m, { color = false, compact = false } = {}) {
   if (m.status.updated) out.push(line(c('dim', `STATUS updated ${m.status.updated}`)));
   out.push(`├${'─'.repeat(W)}`);
 
-  const waiting = m.status.sections['1']?.rows ?? [];
-  out.push(line(`${c(waiting.length ? 'red' : 'green', waiting.length ? '▲' : '✓')} ${c('bold', 'Waiting on you')} ${c('dim', `(${waiting.length})`)}`));
-  for (const r of waiting.map(rowView)) out.push(line(`   ${r.title}${r.rec ? c('dim', `  → ${r.rec}`) : ''}`));
-
-  const flight = m.status.sections['2']?.rows ?? [];
-  out.push(line(`${c('yellow', '◆')} ${c('bold', 'In flight')} ${c('dim', `(${flight.length})`)}`));
-  for (const row of flight) {
-    const r = rowView(row), p = row._plan;
-    out.push(line(`   ${r.title}${r.lens ? c('dim', ` · ${r.lens}`) : ''}${p ? `  ${c('cyan', bar(p.done, p.total, 12))} ${p.done}/${p.total}` : ''}${r.state ? c('dim', `  ${r.state}`) : ''}`));
+  const allWaiting = m.status.sections['1']?.rows ?? [];
+  const waiting = allWaiting.filter((r) => !isResolved(r));
+  const resolved = allWaiting.length - waiting.length;
+  out.push(line(`${c(waiting.length ? 'red' : 'green', waiting.length ? '▲' : '✓')} ${c('bold', 'Waiting on you')} ${c('dim', `(${waiting.length}${resolved ? ` · ${resolved} resolved, hidden` : ''})`)}`));
+  for (const r of waiting.slice(0, MAX).map(rowView)) {
+    const t = clip(r.title, Math.min(TXT, 60));
+    out.push(line(`   ${t}${r.rec ? c('dim', `  → ${clip(r.rec, TXT - t.length - 5)}`) : ''}`));
   }
+  out.push(...more(waiting.length - MAX));
+
+  const flight = (m.status.sections['2']?.rows ?? []).filter((r) => !isResolved(r));
+  out.push(line(`${c('yellow', '◆')} ${c('bold', 'In flight')} ${c('dim', `(${flight.length})`)}`));
+  for (const row of flight.slice(0, MAX)) {
+    const r = rowView(row), p = row._plan;
+    const prog = p ? `  ${c('cyan', bar(p.done, p.total, 12))} ${p.done}/${p.total}` : '';
+    const t = clip(r.title, Math.min(TXT, 56));
+    const extra = [r.lens, r.state].filter(Boolean).join(' · ');
+    out.push(line(`   ${t}${prog}${extra ? c('dim', `  ${clip(extra, TXT - t.length - (p ? 22 : 0) - 2)}`) : ''}`));
+  }
+  out.push(...more(flight.length - MAX));
 
   if (!compact) {
     const unlinked = m.plans.filter((p) => !flight.some((r) => r._plan?.path === p.path));
     if (unlinked.length) {
       out.push(line(`${c('cyan', '▤')} ${c('bold', 'Plans')}`));
-      for (const p of unlinked.slice(0, 4)) out.push(line(`   ${c('cyan', bar(p.done, p.total, 12))} ${String(p.done).padStart(2)}/${String(p.total).padEnd(2)} ${p.title}`));
+      for (const p of unlinked.slice(0, 4)) out.push(line(`   ${c('cyan', bar(p.done, p.total, 12))} ${String(p.done).padStart(2)}/${String(p.total).padEnd(2)} ${clip(p.title, TXT - 20)}`));
     }
     if (m.decisions.length) {
       out.push(line(`${c('blue', '◇')} ${c('bold', 'Recent decisions')}`));
-      for (const d of m.decisions.slice(0, 3)) out.push(line(`   ${c('dim', `${d.n} · ${d.date}`)}  ${d.title}`));
+      for (const d of m.decisions.slice(0, 3)) out.push(line(`   ${c('dim', `${d.n} · ${d.date}`)}  ${clip(d.title, TXT - d.n.length - d.date.length - 6)}`));
     }
   }
   const next = m.status.sections['5']?.items ?? [];
   if (next.length) {
     out.push(line(`${c('green', '→')} ${c('bold', 'Next')}`));
-    for (const n of next.slice(0, compact ? 2 : 5)) out.push(line(`   ${n}`));
+    for (const n of next.slice(0, compact ? 2 : 5)) out.push(line(`   ${clip(n, TXT)}`));
+    out.push(...more(next.length - (compact ? 2 : 5)));
   }
   out.push(`├${'─'.repeat(W)}`);
   if (!compact) out.push(line(`${c('dim', 'Team')}  ${m.roles.map((r) => c(ROLE_PAINT[r.color] ?? 'bold', r.name)).join(c('dim', ' · '))}`));
@@ -231,8 +254,8 @@ const md = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*(
 const HUE = { purple: '#7c5cd6', blue: '#2a78d6', green: '#1f9e6e', orange: '#e0782f', pink: '#d4508a', yellow: '#c9a100', red: '#d84a4a', cyan: '#1a9fb5', gray: '#8a918e' };
 
 export function renderHtml(m) {
-  const waiting = m.status.sections['1']?.rows ?? [];
-  const flight = m.status.sections['2']?.rows ?? [];
+  const waiting = (m.status.sections['1']?.rows ?? []).filter((r) => !isResolved(r));
+  const flight = (m.status.sections['2']?.rows ?? []).filter((r) => !isResolved(r));
   const live = m.status.sections['3']?.items ?? [];
   const done = m.status.sections['4']?.items ?? [];
   const next = m.status.sections['5']?.items ?? [];
@@ -316,7 +339,7 @@ async function main(argv) {
     return;
   }
   const color = process.stdout.isTTY && !process.env.NO_COLOR && !flag('--no-color');
-  console.log(renderText(model, { color, compact: flag('--compact') || flag('--wake') }));
+  console.log(renderText(model, { color, compact: flag('--compact') || flag('--wake'), width: process.stdout.columns || 100 }));
 }
 
 // Real paths on both sides: through a symlinked directory (macOS /tmp, a linked checkout) the two spellings differ.
