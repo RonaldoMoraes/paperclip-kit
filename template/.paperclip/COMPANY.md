@@ -1,6 +1,6 @@
 # The company: operating model
 
-One page, read once when Paperclip turns on. It's designed to feel like a company and cost like plain Claude Code. The benchmark behind these choices is in the kit's `bench/RESULTS.md`.
+One page, read once when Paperclip turns on, in Claude Code or in Codex (the kit's `install.sh --with-codex`). It's designed to feel like a company and cost like plain Claude Code. The benchmark behind these choices is in the kit's `bench/RESULTS.md`.
 
 ## 1. Who's who
 
@@ -55,6 +55,7 @@ Anything irreversible or outward-facing (a push, a deploy, a migration on shared
 - **Capture is automatic.** ai-memory's hooks record prompts, tool calls and session boundaries at no model cost. Don't keep a manual ledger.
 - **Recall before re-exploring.** Resuming, or touching an area with history? Ask memory first (`memory_query`: decisions, failed approaches, open questions), then read code.
 - **Write only judgment:** `STATUS.md`, `decisions.md`, and Superpowers' spec and plan files in the repo.
+- **Switching agents:** when Claude stops (a limit, a crash), exit it and open Codex in the same folder, or the other way round. With ai-memory's hooks installed for both, the new session starts from the handoff. Say "continue".
 - **Handoff:** `/handoff` at the end of a session. It updates `STATUS.md` and writes the handoff through ai-memory, so the next session, on any provider or machine, starts from it.
 - **Without ai-memory** (no MCP tools called `memory_*`), `/handoff` writes `.paperclip/HANDOFF.md` instead, and the next session reads it first.
 

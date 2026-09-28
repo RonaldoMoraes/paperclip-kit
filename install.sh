@@ -11,6 +11,9 @@
 #                                    STATUS.md, decisions.md and STORY.md stay: they're the company's
 #                                    memory, and 1.0 reads their older formats
 #   install.sh --company-only        skip the engineering layer (a repo with its own .agents/)
+#   install.sh --with-codex          make the company work in Codex too: a managed block in
+#                                    ${CODEX_HOME:-~/.codex}/AGENTS.md (applies only in repos with
+#                                    .paperclip/) + the Superpowers plugin for Codex
 #
 # The company layer lands as real files (CLAUDE.local.md, .paperclip/, .claude/{agents,commands}/*.md).
 # The engineering layer lands under .agents/{agents,commands,skills}, with one relative symlink per
@@ -23,15 +26,16 @@ TEMPLATE="$KIT_DIR/template"
 ENGINEERING="$KIT_DIR/engineering"
 VERSION="$(tr -d '[:space:]' < "$KIT_DIR/VERSION" 2>/dev/null || echo 0.0.0)"
 
-usage() { sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
-DEST="" NEW=0 WITH_SP=0 REPLACE=0 COMPANY_ONLY=0
+DEST="" NEW=0 WITH_SP=0 REPLACE=0 COMPANY_ONLY=0 WITH_CODEX=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --new) NEW=1; shift; [ $# -gt 0 ] || { echo "✗ --new needs a directory" >&2; exit 1; }; DEST="$1" ;;
     --with-superpowers) WITH_SP=1 ;;
     --replace-company) REPLACE=1 ;;
     --company-only) COMPANY_ONLY=1 ;;
+    --with-codex) WITH_CODEX=1 ;;
     -h|--help) usage; exit 0 ;;
     -*) echo "✗ unknown option: $1" >&2; usage >&2; exit 1 ;;
     *) DEST="$1" ;;
@@ -152,6 +156,32 @@ if [ "$WITH_SP" -eq 1 ]; then
   else
     echo "✗ --with-superpowers: the claude CLI is not on PATH"
   fi
+fi
+if [ "$WITH_CODEX" -eq 1 ]; then
+  CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
+  echo "→ Codex: the Paperclip block in $CODEX_DIR/AGENTS.md (applies only in repos with .paperclip/)"
+  mkdir -p "$CODEX_DIR"
+  node - "$CODEX_DIR/AGENTS.md" "$KIT_DIR/codex/AGENTS.paperclip.md" "$VERSION" <<'NODE'
+const fs = require('fs');
+const [file, blockFile, version] = process.argv.slice(2);
+const start = `<!-- paperclip:start — managed by paperclip-kit ${version} (install.sh --with-codex). Edit the kit's codex/AGENTS.paperclip.md, not this block. -->`;
+const block = `${start}
+${fs.readFileSync(blockFile, 'utf8').trim()}
+<!-- paperclip:end -->`;
+const cur = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+const re = /<!-- paperclip:start[\s\S]*?<!-- paperclip:end -->/;
+const next = re.test(cur) ? cur.replace(re, block) : `${cur.trimEnd()}${cur.trim() ? '\n\n' : ''}${block}\n`;
+if (next !== cur) {
+  if (cur) fs.writeFileSync(`${file}.bak-paperclip`, cur);
+  fs.writeFileSync(file, next);
+  console.log(`  ✓ ${re.test(cur) ? 'updated' : 'added'} the block${cur ? ` (previous file saved as ${file}.bak-paperclip)` : ''}`);
+} else console.log('  ✓ block already current');
+NODE
+  if command -v codex >/dev/null; then
+    if codex plugin list 2>/dev/null | grep -qE "superpowers@[^ ]+ +installed"; then echo "  ✓ Superpowers already installed in Codex"
+    else codex plugin add superpowers@openai-curated-remote >/dev/null 2>&1 && echo "  ✓ Superpowers installed in Codex" \
+      || echo "  ✗ couldn't install Superpowers in Codex — inside Codex: /plugins → search superpowers → Install"; fi
+  else echo "  (codex CLI not on PATH — the block is written; install Superpowers from Codex's /plugins later)"; fi
 fi
 SP_STATE="not detected"
 if command -v claude >/dev/null && ( cd "$DEST" && claude plugin list 2>/dev/null | grep -q "superpowers@" ); then SP_STATE="installed"; fi

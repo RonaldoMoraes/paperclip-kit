@@ -18,6 +18,7 @@ paperclip-kit/
 │   ├── CLAUDE.local.md         #   the on/off toggle and the short version of the rules
 │   ├── .paperclip/             #   COMPANY.md (the operating model) · STATUS.md (control panel) · decisions.md · roles/ (lens cards) · bin/panel (terminal + HTML dashboard, tested)
 │   └── .claude/                #   agents/researcher.md (the one parallel agent) + /paperclip /role /where /build /decide /hire /handoff
+├── codex/AGENTS.paperclip.md   # the block install.sh --with-codex keeps in ~/.codex/AGENTS.md, so Codex runs the same company
 ├── engineering/                # LAYER 2 — project-agnostic intelligence; single source for install.sh AND the scaffold, and both write it the same way: files under .agents/, one .claude/<dir>/<entry> symlink each
 │   ├── agents/                 #   platform-engineer, design-systems-engineer, mobile-engineer, playwright-test-{planner,generator,healer}
 │   ├── commands/               #   grill, scaffold, feature, module, create/dispose/publish-worktree, playwright-test-{plan,generate,heal}

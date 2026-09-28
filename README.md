@@ -18,10 +18,12 @@ Turns any repo into an AI company you direct as Founder, then (after one intervi
 ~/paperclip-kit/install.sh /path/to/repo --with-superpowers   # the company + Superpowers for that repo
 ~/paperclip-kit/install.sh --new ~/code/acme                  # create the directory, then install
 ~/paperclip-kit/install.sh . --replace-company                # upgrading from 0.3 (old files move to a backup)
+~/paperclip-kit/install.sh . --with-codex                     # the company in Codex too (once per machine)
 ```
 
 - **Superpowers**: `--with-superpowers` runs `claude plugin install superpowers@claude-plugins-official --scope local`, so it's enabled for that repo only. Or install it yourself inside Claude Code.
-- **ai-memory** (recommended, optional): install it once per machine ([quick start](https://github.com/akitaonrails/ai-memory#quick-start)), then `ai-memory install-hooks --agent claude-code --apply` and `ai-memory install-mcp --client claude-code --apply`. Without it, `/handoff` writes `.paperclip/HANDOFF.md` instead.
+- **Codex**: `--with-codex` adds a managed block to `~/.codex/AGENTS.md` (active only in repos with `.paperclip/`) and installs Superpowers for Codex. In Codex, "paperclip on" and the commands work the same; type them with or without the `/`.
+- **ai-memory** (recommended, optional): install it once per machine ([quick start](https://github.com/akitaonrails/ai-memory#quick-start)), then, for each agent you use: `ai-memory install-hooks --agent claude-code --apply --project-strategy repo-root` and `ai-memory install-mcp --client claude-code --apply` (and the same with `codex`). `repo-root` makes a repo's worktrees share one memory. Without it, `/handoff` writes `.paperclip/HANDOFF.md` instead.
 - **Nothing is ever clobbered.** In a repo with `.git`, every installed path goes to `.git/info/exclude`. `.paperclip/kit.json` records where the kit lives.
 - **Prerequisites** for the product layer: Node 22.17.1, Yarn 4 via corepack, Docker (for `db-prisma`), and Chromium for the e2e gate.
 
