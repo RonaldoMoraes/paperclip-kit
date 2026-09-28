@@ -6,8 +6,11 @@
 #   install.sh --new <dir>           create <dir> first, then install
 #   install.sh --with-superpowers    also install the Superpowers plugin for this repo only
 #                                    (claude plugin install … --scope local)
-#   install.sh --replace-company     upgrading from 0.3: move the old company layer into
-#                                    .paperclip/.backup-<time>/ first, then install fresh
+#   install.sh --replace-company     upgrading an older install: move the old company machinery
+#                                    into .paperclip/.backup-<time>/ first, then install fresh.
+#                                    STATUS.md, decisions.md and STORY.md stay: they're the company's
+#                                    memory, and 1.0 reads their older formats
+#   install.sh --company-only        skip the engineering layer (a repo with its own .agents/)
 #
 # The company layer lands as real files (CLAUDE.local.md, .paperclip/, .claude/{agents,commands}/*.md).
 # The engineering layer lands under .agents/{agents,commands,skills}, with one relative symlink per
@@ -20,14 +23,15 @@ TEMPLATE="$KIT_DIR/template"
 ENGINEERING="$KIT_DIR/engineering"
 VERSION="$(tr -d '[:space:]' < "$KIT_DIR/VERSION" 2>/dev/null || echo 0.0.0)"
 
-usage() { sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
-DEST="" NEW=0 WITH_SP=0 REPLACE=0
+DEST="" NEW=0 WITH_SP=0 REPLACE=0 COMPANY_ONLY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --new) NEW=1; shift; [ $# -gt 0 ] || { echo "✗ --new needs a directory" >&2; exit 1; }; DEST="$1" ;;
     --with-superpowers) WITH_SP=1 ;;
     --replace-company) REPLACE=1 ;;
+    --company-only) COMPANY_ONLY=1 ;;
     -h|--help) usage; exit 0 ;;
     -*) echo "✗ unknown option: $1" >&2; usage >&2; exit 1 ;;
     *) DEST="$1" ;;
@@ -44,13 +48,14 @@ echo "→ Installing Paperclip Kit $VERSION into: $DEST"
 INSTALLED_PATHS="$(mktemp)"
 trap 'rm -f "$INSTALLED_PATHS"' EXIT
 
-# --replace-company: the 0.3 company layer (harness, ledger, personas) is moved aside, never deleted.
-# The scaffold's own files (.paperclip/project.manifest.json, scaffold.lock.json) stay put.
+# --replace-company: the old company machinery (harness, ledger, personas, commands) is moved aside,
+# never deleted. The company's memory (STATUS.md, decisions.md, STORY.md), anything else the Founder
+# keeps in .paperclip/, and the scaffold's own files stay put.
 if [ "$REPLACE" -eq 1 ]; then
   BACKUP="$DEST/.paperclip/.backup-$(date +%Y%m%d-%H%M%S)"
   moved=0
   for p in CLAUDE.local.md \
-           .paperclip/PLAYBOOK.md .paperclip/HARNESS.md .paperclip/STORY.md .paperclip/STATUS.md .paperclip/decisions.md \
+           .paperclip/PLAYBOOK.md .paperclip/HARNESS.md \
            .paperclip/bin .paperclip/briefs .paperclip/campaigns .paperclip/contracts .paperclip/findings \
            .paperclip/log .paperclip/orders .paperclip/research .paperclip/work \
            .claude/agents/ceo.md .claude/agents/cto.md .claude/agents/crgo.md .claude/agents/cmo.md \
@@ -63,7 +68,7 @@ if [ "$REPLACE" -eq 1 ]; then
       mkdir -p "$BACKUP/$(dirname "$p")"; mv "$DEST/$p" "$BACKUP/$p"; moved=$((moved + 1))
     fi
   done
-  echo "  moved $moved old company-layer paths to ${BACKUP#$DEST/} (STATUS.md and decisions.md are there to copy back)"
+  echo "  moved $moved old company-layer paths to ${BACKUP#$DEST/} (STATUS.md, decisions.md, STORY.md kept in place)"
 fi
 
 # copy_tree <src-root> <dest-prefix>: every file under src-root to DEST/<dest-prefix>/<rel>, never
@@ -109,11 +114,15 @@ link_tree() {
 echo "  company layer (template/)"
 copy_tree "$TEMPLATE" ""
 chmod +x "$DEST/.paperclip/bin/panel" "$DEST/.paperclip/bin/panel.mjs" 2>/dev/null || true
-echo "  engineering layer (engineering/ → .agents/, linked from .claude/)"
-for d in agents commands skills; do
-  copy_tree "$ENGINEERING/$d" ".agents/$d"
-  link_tree "$d"
-done
+if [ "$COMPANY_ONLY" -eq 1 ]; then
+  echo "  engineering layer skipped (--company-only)"
+else
+  echo "  engineering layer (engineering/ → .agents/, linked from .claude/)"
+  for d in agents commands skills; do
+    copy_tree "$ENGINEERING/$d" ".agents/$d"
+    link_tree "$d"
+  done
+fi
 
 # .paperclip/kit.json: where the kit lives, for /scaffold and /module. Always refreshed.
 mkdir -p "$DEST/.paperclip"

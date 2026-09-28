@@ -101,3 +101,28 @@ test('the CLI wakes the company through a symlinked directory', async () => {
   assert.match(out, /CEO on duty/);
   assert.equal(JSON.parse(readFileSync(join(real, '.paperclip', 'state.json'), 'utf8')).role, 'ceo');
 });
+
+test('an older company: other column names, ### decisions, numbered oldest-first', async () => {
+  const { rowView } = await import('./panel.mjs');
+  const s = parseStatus(`## 1. 🔴 DECISIONS AWAITING THE FOUNDER
+| # | Decision | Context | CEO recommendation |
+|---|---|---|---|
+| 1 | Pricing tier | launch week | ship $29 |
+
+## 2. 🟡 IN FLIGHT
+| Item | State | Gated on |
+|---|---|---|
+| Identity merge | building | legal review |
+
+## F. 🧊 FROZEN
+| # | Title |
+|---|---|
+| 1 | old idea |
+`);
+  assert.deepEqual(rowView(s.sections['1'].rows[0]), { title: 'Pricing tier', lens: '', state: '', rec: 'ship $29', why: 'launch week', plan: '' });
+  assert.equal(rowView(s.sections['2'].rows[0]).title, 'Identity merge');
+  assert.equal(rowView(s.sections['2'].rows[0]).state, 'building');
+  assert.equal(s.sections.F, undefined, 'lettered sections are not panel sections');
+  const d = parseDecisions('# Decision Log\n### 001 — World A → World B pivot\n**Date:** 2026-06-20\n\n### 002 — Men\'s health focus\n**Date:** 2026-06-21\n');
+  assert.deepEqual(d, [{ n: '002', date: '2026-06-21', title: "Men's health focus" }, { n: '001', date: '2026-06-20', title: 'World A → World B pivot' }]);
+});

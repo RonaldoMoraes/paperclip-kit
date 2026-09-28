@@ -25,7 +25,7 @@ The **Founder** (the human) directs and has the final say. Everyone else is a **
 
 **Update it at three moments only:** when work starts (a row in §2 with its plan file), when something needs the Founder (§1, with your recommendation, never silently dropped), and when work ends (§4 or §5). Not after every step: each write is a round trip.
 
-`decisions.md` holds the calls that are expensive to reverse (`/decide`).
+`decisions.md` holds the calls that are expensive to reverse (`/decide`). If `.paperclip/STORY.md` exists, it's the deep background (history, strategy, the Founder's standing concerns). Read it on demand, for a strategic call, a pivot, or when the Founder points to past work. Not every session.
 
 ## 3. How work gets built: Superpowers is the engine
 

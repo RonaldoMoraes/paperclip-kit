@@ -56,11 +56,28 @@ export function planProgress(md) {
   return { title, done, total: done + open };
 }
 
-/** decisions.md → [{ n, date, title }], newest first as written. HTML comments are ignored. */
+/** decisions.md → [{ n, date, title }], highest number first. Reads `## NNN · date · title` and older
+ *  logs' `### NNN — title` (date then comes from a `**Date:**` line under it). HTML comments are ignored. */
 export function parseDecisions(md) {
   const clean = md.replace(/<!--[\s\S]*?-->/g, '');
-  return [...clean.matchAll(/^##\s+(\d+)\s*·\s*([^·\n]+?)\s*·\s*(.+)$/gm)]
-    .map((m) => ({ n: m[1], date: m[2].trim(), title: m[3].trim() }));
+  const out = [];
+  for (const m of clean.matchAll(/^#{2,3}\s+(\d+)\s*[·—–-]\s*(.+)$/gm)) {
+    let [date, title] = [null, m[2].trim()];
+    const dot = title.match(/^([^·]+?)\s*·\s*(.+)$/);
+    if (dot && /\d{4}-\d\d-\d\d/.test(dot[1])) [date, title] = [dot[1].trim(), dot[2].trim()];
+    if (!date) date = clean.slice(m.index, m.index + 400).match(/\*\*Date:?\*\*:?\s*([^\n·*]+)/)?.[1]?.trim() ?? '';
+    out.push({ n: m[1], date, title });
+  }
+  return out.sort((a, b) => Number(b.n) - Number(a.n));
+}
+
+/** A STATUS row's display fields, whatever the table calls its columns. */
+export function rowView(row) {
+  const keys = Object.keys(row).filter((k) => !k.startsWith('_'));
+  const find = (re) => keys.find((k) => re.test(k));
+  const titleKey = find(/^(decision|work|item|task|thread|campaign)/i) ?? keys.find((k) => k !== '#') ?? keys[0];
+  const pick = (re) => { const k = find(re); return k && k !== titleKey ? row[k] : ''; };
+  return { title: row[titleKey] ?? '', lens: pick(/lens|owner|role/i), state: pick(/^state|status/i), rec: pick(/recommend/i), why: pick(/why|context|gated/i), plan: pick(/plan/i) };
 }
 
 /** A role card's frontmatter. */
@@ -119,7 +136,7 @@ export async function collect(root, { probe = true } = {}) {
   const plans = listPlans(root);
   // Attach plan progress to in-flight rows that name a plan file.
   for (const row of status.sections['2']?.rows ?? []) {
-    const cell = row.Plan ?? '';
+    const cell = rowView(row).plan || Object.values(row).join(' ');
     const hit = plans.find((p) => cell.includes(p.path) || (cell && cell.replace(/[`\s]/g, '').endsWith(basename(p.path))));
     if (hit) row._plan = { path: hit.path, done: hit.done, total: hit.total };
   }
@@ -173,13 +190,13 @@ export function renderText(m, { color = false, compact = false } = {}) {
 
   const waiting = m.status.sections['1']?.rows ?? [];
   out.push(line(`${c(waiting.length ? 'red' : 'green', waiting.length ? '▲' : '✓')} ${c('bold', 'Waiting on you')} ${c('dim', `(${waiting.length})`)}`));
-  for (const r of waiting) out.push(line(`   ${r.Decision}${r.Recommendation ? c('dim', `  → ${r.Recommendation}`) : ''}`));
+  for (const r of waiting.map(rowView)) out.push(line(`   ${r.title}${r.rec ? c('dim', `  → ${r.rec}`) : ''}`));
 
   const flight = m.status.sections['2']?.rows ?? [];
   out.push(line(`${c('yellow', '◆')} ${c('bold', 'In flight')} ${c('dim', `(${flight.length})`)}`));
-  for (const r of flight) {
-    const p = r._plan;
-    out.push(line(`   ${r.Work}${r.Lens ? c('dim', ` · ${r.Lens}`) : ''}${p ? `  ${c('cyan', bar(p.done, p.total, 12))} ${p.done}/${p.total}` : ''}${r.State ? c('dim', `  ${r.State}`) : ''}`));
+  for (const row of flight) {
+    const r = rowView(row), p = row._plan;
+    out.push(line(`   ${r.title}${r.lens ? c('dim', ` · ${r.lens}`) : ''}${p ? `  ${c('cyan', bar(p.done, p.total, 12))} ${p.done}/${p.total}` : ''}${r.state ? c('dim', `  ${r.state}`) : ''}`));
   }
 
   if (!compact) {
@@ -252,9 +269,9 @@ footer{color:var(--mute);font-size:12.5px}
 ${lens ? `<span class="lens"><i style="background:${HUE[lens.color] ?? HUE.gray}"></i>${esc(lens.name)} on duty</span>` : ''}</header>
 <div class="grid">
 <section class="card${waiting.length ? ' alert' : ''}"><h2>Waiting on you · ${waiting.length}</h2>
-${waiting.length ? waiting.map((r) => `<div><strong>${md(r.Decision)}</strong>${r['Why it\'s here'] ? `<div class="rec">${md(r["Why it's here"])}</div>` : ''}${r.Recommendation ? `<div class="rec">→ ${md(r.Recommendation)}</div>` : ''}</div>`).join('') : '<p class="empty">Nothing is waiting on you.</p>'}</section>
+${waiting.length ? waiting.map(rowView).map((r) => `<div><strong>${md(r.title)}</strong>${r.why ? `<div class="rec">${md(r.why)}</div>` : ''}${r.rec ? `<div class="rec">→ ${md(r.rec)}</div>` : ''}</div>`).join('') : '<p class="empty">Nothing is waiting on you.</p>'}</section>
 <section class="card"><h2>In flight · ${flight.length}</h2>
-${flight.length ? flight.map((r) => `<div class="row"><div><div class="t">${md(r.Work)}</div><div class="s">${md([r.Lens, r.State].filter(Boolean).join(' · '))}</div></div>${progress(r._plan)}</div>`).join('') : '<p class="empty">Nothing in flight.</p>'}</section>
+${flight.length ? flight.map((row) => { const r = rowView(row); return `<div class="row"><div><div class="t">${md(r.title)}</div><div class="s">${md([r.lens, r.state || r.why].filter(Boolean).join(' · '))}</div></div>${progress(row._plan)}</div>`; }).join('') : '<p class="empty">Nothing in flight.</p>'}</section>
 <section class="card"><h2>Next</h2>${list(next, 'No next moves listed.')}</section>
 <section class="card"><h2>Plans</h2>
 ${m.plans.length ? m.plans.map((p) => `<div class="row"><div><div class="t">${esc(p.title)}</div><div class="s"><code>${esc(p.path)}</code></div></div>${progress(p)}</div>`).join('') : '<p class="empty">No Superpowers plans yet.</p>'}</section>

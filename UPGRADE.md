@@ -18,12 +18,16 @@ Because a re-run never replaces files, an upgrade has to move the old ones aside
 ~/paperclip-kit/install.sh /path/to/repo --replace-company --with-superpowers
 ```
 
-`--replace-company` moves every 0.3 company-layer path into `.paperclip/.backup-<time>/`. It covers `CLAUDE.local.md`, `PLAYBOOK`, `HARNESS`, `STORY`, `STATUS`, `decisions`, `bin/pc`, the ledger folders, `briefs/` and `orders/`, and the old personas and commands. Nothing is deleted. The scaffold's own files (`project.manifest.json`, `scaffold.lock.json`) and the engineering layer are left in place.
+`--replace-company` moves the old machinery into `.paperclip/.backup-<time>/`: `CLAUDE.local.md`, `PLAYBOOK`, `HARNESS`, `bin/pc`, the ledger folders, `briefs/` and `orders/`, and the old personas and commands. Nothing is deleted. What stays in place:
+- **The company's memory:** `STATUS.md`, `decisions.md`, `STORY.md`. 1.0 reads their older formats: other table columns, `### 001 — title` decisions, emoji headings.
+- **Anything else you keep in `.paperclip/`.**
+- **The scaffold's own files** (`project.manifest.json`, `scaffold.lock.json`).
+- **The engineering layer.** Add `--company-only` when the repo has its own `.agents/` and you don't want the kit's.
 
-Then carry your history over by hand:
-- **`STATUS.md`**: copy the rows from the backup into the new sections. §1 (waiting on the Founder) and §5 (next) map directly. In-flight work becomes §2 rows, with a plan path once Superpowers writes one.
-- **`decisions.md`**: append the old entries under the new heading format (`## NNN · date · title`) so the panel lists them.
-- **`STORY.md` and `research/`**: if ai-memory is installed, `ai-memory bootstrap` imports existing history. Otherwise keep them in the backup and point to them from `STATUS.md`.
-- **Hired roles**: turn each old `.claude/agents/<role>.md` into a lens card, `.paperclip/roles/<role>.md` (see `/hire`).
+Then carry your own edits over by hand:
+- **Your `CLAUDE.local.md` sections** (product context, house rules): copy them from the backup into the new file, under its toggle.
+- **`PLAYBOOK.md` rules that are still true** (staffing, guardrails): add them to `.paperclip/COMPANY.md` as a house-rules section. Drop the ones about the harness and the ledger.
+- **Hired roles**: turn each old `.claude/agents/<role>.md` into a lens card, `.paperclip/roles/<role>.md` (see `/hire`). Keep the agent file too if the role should still run in parallel.
+- **History**: if ai-memory is installed, `ai-memory bootstrap` imports existing sessions.
 
 Reload the Claude Code session afterwards: new commands and agents are picked up on the next start.

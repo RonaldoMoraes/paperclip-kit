@@ -3,7 +3,7 @@ description: Log a decision that is expensive to reverse
 argument-hint: "<the decision>"
 ---
 
-Append to the top of `.paperclip/decisions.md` (below the intro), numbered after the newest entry:
+Add it to `.paperclip/decisions.md`, numbered after the highest entry. **If the log already has entries, match their format and order exactly.** Only in an empty log, add at the top, below the intro:
 
 ```
 ## NNN · <today> · <short title>
