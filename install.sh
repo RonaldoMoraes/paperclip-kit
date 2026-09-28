@@ -146,9 +146,25 @@ if [ -d "$DEST/.git" ]; then
 fi
 
 # ---------- the engine and the memory ----------
+# sp_enabled: Superpowers is enabled for THIS repo — at user scope, or a local/project install whose
+# projectPath is DEST. `claude plugin list` also prints other repos' local installs (as disabled),
+# so a plain grep would call it installed here when it isn't.
+sp_enabled() {
+  command -v claude >/dev/null || return 1
+  ( cd "$DEST" && claude plugin list --json 2>/dev/null ) | node -e '
+const fs = require("fs"); const real = (p) => { try { return fs.realpathSync(p); } catch { return p; } };
+let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
+  try {
+    const dest = real(process.argv[1]);
+    const ok = JSON.parse(s).some((p) => p.id.startsWith("superpowers@") && p.enabled
+      && (p.scope === "user" || (p.projectPath && real(p.projectPath) === dest)));
+    process.exit(ok ? 0 : 1);
+  } catch { process.exit(1); }
+});' "$DEST"
+}
 echo
 if [ "$WITH_SP" -eq 1 ]; then
-  if command -v claude >/dev/null && ( cd "$DEST" && claude plugin list 2>/dev/null | grep -q "superpowers@" ); then
+  if sp_enabled; then
     echo "  ✓ Superpowers already enabled here"
   elif command -v claude >/dev/null; then
     echo "→ Superpowers for this repo (claude plugin install superpowers@claude-plugins-official --scope local)"
@@ -186,7 +202,7 @@ NODE
   else echo "  (codex CLI not on PATH — the block is written; install Superpowers from Codex's /plugins later)"; fi
 fi
 SP_STATE="not detected"
-if command -v claude >/dev/null && ( cd "$DEST" && claude plugin list 2>/dev/null | grep -q "superpowers@" ); then SP_STATE="installed"; fi
+if sp_enabled; then SP_STATE="installed"; fi
 MEM_URL="${AI_MEMORY_SERVER_URL:-http://127.0.0.1:49374}"
 if curl -s -o /dev/null --max-time 1 "$MEM_URL" 2>/dev/null; then MEM_STATE="running at $MEM_URL"
 elif command -v ai-memory >/dev/null; then MEM_STATE="installed, server not reachable at $MEM_URL"
