@@ -148,7 +148,9 @@ fi
 # ---------- the engine and the memory ----------
 echo
 if [ "$WITH_SP" -eq 1 ]; then
-  if command -v claude >/dev/null; then
+  if command -v claude >/dev/null && ( cd "$DEST" && claude plugin list 2>/dev/null | grep -q "superpowers@" ); then
+    echo "  ✓ Superpowers already enabled here"
+  elif command -v claude >/dev/null; then
     echo "→ Superpowers for this repo (claude plugin install superpowers@claude-plugins-official --scope local)"
     ( cd "$DEST" && claude plugin install superpowers@claude-plugins-official --scope local ) \
       && echo "  ✓ Superpowers enabled here" \

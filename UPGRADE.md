@@ -12,7 +12,9 @@
 
 The benchmark behind the change is in `bench/RESULTS.md`.
 
-Because a re-run never replaces files, an upgrade has to move the old ones aside:
+**The simple way:** run `~/paperclip-kit/setup.sh` inside the project. It detects the old install, does everything below, carries your own `CLAUDE.local.md` sections, `PLAYBOOK.md` rules and hired roles over for review, and sets up ai-memory, Codex and Superpowers. Review the "Carried over" and "House rules" sections it adds.
+
+**By hand:** because a re-run never replaces files, an upgrade has to move the old ones aside:
 
 ```bash
 ~/paperclip-kit/install.sh /path/to/repo --replace-company --with-superpowers

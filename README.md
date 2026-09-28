@@ -14,6 +14,27 @@ Turns any repo into an AI company you direct as Founder, then (after one intervi
 
 ## Install
 
+**One command**, inside any project (new, or running an older Paperclip). It's safe to re-run:
+
+```bash
+~/paperclip-kit/setup.sh
+```
+
+**Once per machine**, it:
+- installs ai-memory natively (macOS: the release binary plus a login service; no Docker);
+- connects it to Claude Code and Codex, with a repo's worktrees sharing one memory;
+- installs Superpowers for Codex, and the Paperclip block Codex follows.
+
+**Per project**, it:
+- installs the company, or upgrades an older one in place: the old machinery moves to a backup, and `STATUS.md`, `decisions.md` and `STORY.md` stay;
+- carries your own `CLAUDE.local.md` sections, playbook rules and hired roles over for review;
+- enables Superpowers for Claude Code in this repo;
+- skips the engineering layer when the repo keeps its own `.agents/`.
+
+The only step left to you is the first time you open `codex`: choose "Trust all and continue" for the new hooks. `--no-memory` and `--no-codex` opt out of those parts.
+
+Everything `setup.sh` does is also available piece by piece:
+
 ```bash
 ~/paperclip-kit/install.sh /path/to/repo --with-superpowers   # the company + Superpowers for that repo
 ~/paperclip-kit/install.sh --new ~/code/acme                  # create the directory, then install
